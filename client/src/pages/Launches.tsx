@@ -1,7 +1,7 @@
 import { isOk } from "@osdk/client";
 import { NytSample } from "@recap/sdk";
 import React, { useEffect, useState } from "react";
-import { client } from "../lib/foundry";
+import client from "../lib/foundry";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { ArticleLoadingState } from "@/components/articles/ArticleLoadingState";
 import { ArticleErrorState } from "@/components/articles/ArticleErrorState";

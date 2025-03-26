@@ -17,6 +17,13 @@ export default defineConfig({
         target: "https://jquinn-launch.usw-18.palantirfoundry.com",
         changeOrigin: true,
         secure: false,
+        rewrite: (path) => path,
+      },
+      "/v2": {
+        target: "https://jquinn-launch.usw-18.palantirfoundry.com",
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path,
       },
     },
   },
