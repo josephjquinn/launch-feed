@@ -11,7 +11,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@osdk/client": "^2.1.2",
+    "@osdk/oauth": "^1.1.1",
     "@radix-ui/react-slot": "^1.1.2",
+    "@recap/sdk": "^0.1.0",
     "@tailwindcss/vite": "^4.0.16",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
