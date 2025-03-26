@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Layout from "./components/Layout";
 import Home from "./pages/Home";
 import Launches from "./pages/Launches";
+import DailyReport from "./pages/DailyReport";
 
 function App() {
   return (
@@ -10,6 +11,7 @@ function App() {
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="launches" element={<Launches />} />
+          <Route path="daily-report" element={<DailyReport />} />
         </Route>
       </Routes>
     </Router>
