@@ -11,4 +11,13 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    proxy: {
+      "/api": {
+        target: "https://jquinn-launch.usw-18.palantirfoundry.com",
+        changeOrigin: true,
+        secure: false,
+      },
+    },
+  },
 });
