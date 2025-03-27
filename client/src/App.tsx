@@ -5,6 +5,7 @@ import Launches from "./pages/Launches";
 import DailyReport from "./pages/DailyReport";
 import NewsSearch from "./pages/NewsSearch";
 import SemanticSearch from "./pages/SemanticSearch";
+import DateGuessGame from "./pages/DateGuessGame";
 
 function App() {
   return (
