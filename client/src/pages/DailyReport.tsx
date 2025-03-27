@@ -1,4 +1,4 @@
-import { nytDailyReport } from "@recap/sdk";
+import { nytDailyReport, recapSentiment } from "@recap/sdk";
 import React, { useEffect, useState } from "react";
 import client from "../lib/foundry";
 import { Newspaper, Calendar, Clock } from "lucide-react";
@@ -18,6 +18,7 @@ import { format } from "date-fns";
 const DailyReport: React.FC = () => {
   // Simple state management
   const [summary, setSummary] = useState("");
+  const [sentiment, setSentiment] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
@@ -67,6 +68,15 @@ const DailyReport: React.FC = () => {
 
         if (typeof result === "string") {
           setSummary(result.trim());
+
+          // Get sentiment analysis
+          const sentimentResult = await client(recapSentiment).executeFunction({
+            recap: result.trim(),
+          });
+
+          if (typeof sentimentResult === "string") {
+            setSentiment(parseFloat(sentimentResult));
+          }
         } else {
           setError("Unexpected response format");
         }
@@ -197,9 +207,29 @@ const DailyReport: React.FC = () => {
             ) : (
               <Card className="border-none shadow-lg">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg text-muted-foreground">
-                    {formatDate(date)}
-                  </CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg text-muted-foreground">
+                      {formatDate(date)}
+                    </CardTitle>
+                    {sentiment !== null && (
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-muted-foreground">
+                          Sentiment:
+                        </span>
+                        <span
+                          className={`text-sm font-medium ${
+                            sentiment > 0
+                              ? "text-green-500"
+                              : sentiment < 0
+                              ? "text-red-500"
+                              : "text-yellow-500"
+                          }`}
+                        >
+                          {sentiment.toFixed(2)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="prose prose-lg max-w-none">
