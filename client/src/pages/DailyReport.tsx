@@ -15,15 +15,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import {
-  ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  ChartLegend,
-  ChartLegendContent,
-} from "@/components/ui/chart";
 
 const DailyReport: React.FC = () => {
   // Simple state management
@@ -36,24 +27,6 @@ const DailyReport: React.FC = () => {
 
   // Update the date state to use Date object
   const [date, setDate] = useState<Date>(new Date("2024-12-31"));
-
-  // Chart data and config
-  const chartData =
-    sentiment !== null ? [{ name: "Daily Sentiment", value: sentiment }] : [];
-
-  const chartConfig = {
-    value: {
-      label: "Sentiment Score",
-      color:
-        sentiment !== null
-          ? sentiment > 0
-            ? "#22c55e"
-            : sentiment < 0
-            ? "#ef4444"
-            : "#eab308"
-          : "#64748b",
-    },
-  } satisfies ChartConfig;
 
   // Update date navigation functions
   const goToDate = (newDate: Date) => {
@@ -131,6 +104,15 @@ const DailyReport: React.FC = () => {
   // Update date formatting
   const formatDate = (date: Date) => {
     return format(date, "EEEE, MMMM d, yyyy");
+  };
+
+  // Add sentiment label helper function
+  const getSentimentLabel = (value: number) => {
+    if (value <= 2) return { text: "Very Negative", color: "#ef4444" };
+    if (value <= 4) return { text: "Negative", color: "#f87171" };
+    if (value <= 6) return { text: "Neutral", color: "#eab308" };
+    if (value <= 8) return { text: "Positive", color: "#4ade80" };
+    return { text: "Very Positive", color: "#22c55e" };
   };
 
   // Loading skeleton
@@ -248,64 +230,65 @@ const DailyReport: React.FC = () => {
                     <CardTitle className="text-lg text-muted-foreground">
                       {formatDate(date)}
                     </CardTitle>
-                    {sentiment !== null && (
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                          Sentiment:
-                        </span>
-                        <span
-                          className={`text-sm font-medium ${
-                            sentiment > 0
-                              ? "text-green-500"
-                              : sentiment < 0
-                              ? "text-red-500"
-                              : "text-yellow-500"
-                          }`}
-                        >
-                          {sentiment.toFixed(2)}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   {sentiment !== null && (
-                    <div className="h-[300px] w-full border-b pb-6">
-                      <ChartContainer config={chartConfig} className="h-full">
-                        <BarChart data={chartData}>
-                          <CartesianGrid vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            tickLine={false}
-                            tickMargin={10}
-                            axisLine={false}
-                            tick={{ fontSize: 12 }}
+                    <div className="flex flex-col items-center justify-center space-y-4 border-b pb-6">
+                      <div className="relative w-32 h-32">
+                        <svg className="w-full h-full" viewBox="0 0 100 100">
+                          {/* Background circle */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            stroke="#e5e7eb"
+                            strokeWidth="8"
                           />
-                          <YAxis
-                            tickLine={false}
-                            axisLine={false}
-                            tickMargin={10}
-                            tickFormatter={(value) => value.toFixed(1)}
-                            domain={[0, 10]}
-                            ticks={[0, 2, 4, 6, 8, 10]}
-                            tick={{ fontSize: 12 }}
-                            label={{
-                              value: "Sentiment Score",
-                              angle: -90,
-                              position: "insideLeft",
-                              style: { fontSize: 12 },
-                            }}
+                          {/* Progress circle */}
+                          <circle
+                            cx="50"
+                            cy="50"
+                            r="45"
+                            fill="none"
+                            stroke={getSentimentLabel(sentiment).color}
+                            strokeWidth="8"
+                            strokeDasharray={`${(sentiment / 10) * 283} 283`}
+                            transform="rotate(-90 50 50)"
+                            className="transition-all duration-500"
                           />
-                          <ChartTooltip content={<ChartTooltipContent />} />
-                          <ChartLegend content={<ChartLegendContent />} />
-                          <Bar
-                            dataKey="value"
-                            fill="var(--color-value)"
-                            radius={4}
-                            barSize={40}
-                          />
-                        </BarChart>
-                      </ChartContainer>
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-center">
+                            <div className="text-2xl font-bold">
+                              {sentiment.toFixed(1)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              Sentiment
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                        <div
+                          className="text-sm font-medium"
+                          style={{ color: getSentimentLabel(sentiment).color }}
+                        >
+                          {getSentimentLabel(sentiment).text}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {sentiment <= 2
+                            ? "Extremely unfavorable news coverage"
+                            : sentiment <= 4
+                            ? "Generally unfavorable coverage"
+                            : sentiment <= 6
+                            ? "Balanced and neutral coverage"
+                            : sentiment <= 8
+                            ? "Generally favorable coverage"
+                            : "Extremely favorable news coverage"}
+                        </div>
+                      </div>
                     </div>
                   )}
 
