@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home, Rocket, Newspaper, Search, Brain } from "lucide-react";
+import { Home, Rocket, Newspaper, Search, Brain, Gamepad2 } from "lucide-react";
 
 export default function Layout() {
   const location = useLocation();
@@ -81,6 +81,19 @@ export default function Layout() {
                 >
                   <Brain className="h-4 w-4" />
                   <span>Semantic Search</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/date-guess-game"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    isActive("/date-guess-game")
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Gamepad2 className="h-4 w-4" />
+                  <span>Date Game</span>
                 </Link>
               </li>
             </ul>

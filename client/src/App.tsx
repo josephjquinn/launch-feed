@@ -16,6 +16,7 @@ function App() {
           <Route path="daily-report" element={<DailyReport />} />
           <Route path="news-search" element={<NewsSearch />} />
           <Route path="semantic-search" element={<SemanticSearch />} />
+          <Route path="date-guess-game" element={<DateGuessGame />} />
         </Route>
       </Routes>
     </Router>
