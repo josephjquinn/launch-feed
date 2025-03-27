@@ -1,22 +1,64 @@
-import { Link, Outlet } from "react-router-dom";
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { Home, Rocket, Newspaper } from "lucide-react";
 
 export default function Layout() {
+  const location = useLocation();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
   return (
-    <div className="min-h-svh flex flex-col">
-      <header className="border-b">
+    <div className="min-h-svh flex flex-col bg-background">
+      <header className="border-b bg-card">
         <nav className="container mx-auto px-4 py-4">
-          <ul className="flex gap-4">
-            <li>
-              <Link to="/" className="hover:text-primary">
-                Home
-              </Link>
-            </li>
-            <li>
-              <Link to="/launches" className="hover:text-primary">
-                Launches
-              </Link>
-            </li>
-          </ul>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Rocket className="h-6 w-6 text-primary" />
+              <span className="font-semibold text-lg">Launch Feed</span>
+            </div>
+            <ul className="flex items-center gap-1">
+              <li>
+                <Link
+                  to="/"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    isActive("/")
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Home className="h-4 w-4" />
+                  <span>Home</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/launches"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    isActive("/launches")
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Rocket className="h-4 w-4" />
+                  <span>Launches</span>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/daily-report"
+                  className={`flex items-center gap-2 px-4 py-2 rounded-md transition-colors ${
+                    isActive("/daily-report")
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-muted"
+                  }`}
+                >
+                  <Newspaper className="h-4 w-4" />
+                  <span>Daily Report</span>
+                </Link>
+              </li>
+            </ul>
+          </div>
         </nav>
       </header>
       <main className="flex-1">
