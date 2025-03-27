@@ -7,6 +7,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { format } from "date-fns";
 
 const DailyReport: React.FC = () => {
   // Simple state management
@@ -15,45 +22,29 @@ const DailyReport: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
-  // Get today's date in YYYY-MM-DD format
-  const getToday = () => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, "0");
-    const day = String(now.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
+  // Update the date state to use Date object
+  const [date, setDate] = useState<Date>(new Date());
 
-  const today = getToday();
-
-  // Start with today's date
-  const [date, setDate] = useState(today);
-
-  // Simple date navigation
-  const goToDate = (newDate: string) => {
-    if (newDate <= today) {
+  // Update date navigation functions
+  const goToDate = (newDate: Date) => {
+    if (newDate <= new Date()) {
       setDate(newDate);
     }
   };
 
-  // Simple date change handlers
   const goBack = () => {
-    const [year, month, day] = date.split("-").map(Number);
-    const current = new Date(year, month - 1, day);
-    current.setDate(current.getDate() - 1);
-    const newDate = current.toISOString().split("T")[0];
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() - 1);
     goToDate(newDate);
   };
 
   const goForward = () => {
-    const [year, month, day] = date.split("-").map(Number);
-    const current = new Date(year, month - 1, day);
-    current.setDate(current.getDate() + 1);
-    const newDate = current.toISOString().split("T")[0];
+    const newDate = new Date(date);
+    newDate.setDate(newDate.getDate() + 1);
     goToDate(newDate);
   };
 
-  // Fetch report when date changes
+  // Update useEffect to use date string
   useEffect(() => {
     const fetchReport = async () => {
       try {
@@ -66,8 +57,9 @@ const DailyReport: React.FC = () => {
           setProgress((p) => (p >= 90 ? 90 : p + 10));
         }, 500);
 
+        const dateString = format(date, "yyyy-MM-dd");
         const result = await client(nytDailyReport).executeFunction({
-          selectedDate: date,
+          selectedDate: dateString,
         });
 
         clearInterval(interval);
@@ -89,16 +81,9 @@ const DailyReport: React.FC = () => {
     fetchReport();
   }, [date]);
 
-  // Format date for display
-  const formatDate = (dateString: string) => {
-    const [year, month, day] = dateString.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    return date.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
+  // Update date formatting
+  const formatDate = (date: Date) => {
+    return format(date, "EEEE, MMMM d, yyyy");
   };
 
   // Loading skeleton
@@ -153,23 +138,35 @@ const DailyReport: React.FC = () => {
                 >
                   ←
                 </Button>
-                <div className="flex items-center gap-2 px-3 py-2 bg-background rounded-lg border">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <input
-                    type="date"
-                    value={date}
-                    onChange={(e) => goToDate(e.target.value)}
-                    max={today}
-                    className="bg-transparent focus:outline-none text-sm"
-                    disabled={loading}
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="flex items-center gap-2 px-3 py-2 bg-background"
+                      disabled={loading}
+                    >
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      {format(date, "PPP")}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="end">
+                    <CalendarComponent
+                      mode="single"
+                      selected={date}
+                      onSelect={(newDate: Date | undefined) =>
+                        newDate && goToDate(newDate)
+                      }
+                      disabled={(date: Date) => date > new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
                 <Button
                   variant="outline"
                   size="icon"
                   onClick={goForward}
                   className="h-9 w-9"
-                  disabled={loading || date === today}
+                  disabled={loading || date >= new Date()}
                 >
                   →
                 </Button>
