@@ -1,4 +1,4 @@
-import { nytDailyReport, recapSentiment } from "@recap/sdk";
+import { nytDailyReport, recapSentiment, recapTopics } from "@recap/sdk";
 import React, { useEffect, useState } from "react";
 import client from "../lib/foundry";
 import { Newspaper, Calendar, Clock } from "lucide-react";
@@ -8,6 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Popover,
   PopoverContent,
@@ -27,6 +28,7 @@ import {
 const DailyReport: React.FC = () => {
   // Simple state management
   const [summary, setSummary] = useState("");
+  const [topics, setTopics] = useState<string[]>([]);
   const [sentiment, setSentiment] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,19 +88,27 @@ const DailyReport: React.FC = () => {
         }, 500);
 
         const dateString = format(date, "yyyy-MM-dd");
-        const result = await client(nytDailyReport).executeFunction({
-          selectedDate: dateString,
-        });
+
+        // Fetch summary and topics in parallel
+        const [summaryResult, topicsResult] = await Promise.all([
+          client(nytDailyReport).executeFunction({
+            selectedDate: dateString,
+          }),
+          client(recapTopics).executeFunction({
+            inputDate: dateString,
+          }),
+        ]);
 
         clearInterval(interval);
         setProgress(100);
 
-        if (typeof result === "string") {
-          setSummary(result.trim());
+        if (typeof summaryResult === "string") {
+          setSummary(summaryResult.trim());
+          setTopics(Array.isArray(topicsResult) ? topicsResult : []);
 
           // Get sentiment analysis
           const sentimentResult = await client(recapSentiment).executeFunction({
-            recap: result.trim(),
+            recap: summaryResult.trim(),
           });
 
           if (typeof sentimentResult === "string") {
@@ -298,11 +308,32 @@ const DailyReport: React.FC = () => {
                       </ChartContainer>
                     </div>
                   )}
-                  <div className="prose prose-lg max-w-none pt-4">
-                    <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                      {summary}
-                    </div>
-                  </div>
+
+                  <Tabs defaultValue="summary" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="summary">Summary</TabsTrigger>
+                      <TabsTrigger value="topics">Topics</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="summary" className="mt-4">
+                      <div className="prose prose-lg max-w-none pt-4">
+                        <div className="whitespace-pre-wrap text-foreground leading-relaxed">
+                          {summary}
+                        </div>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="topics" className="mt-4">
+                      <div className="space-y-4">
+                        {topics.map((topic, index) => (
+                          <div
+                            key={index}
+                            className="p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors"
+                          >
+                            <p className="text-foreground">{topic}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </TabsContent>
+                  </Tabs>
                 </CardContent>
               </Card>
             )}
