@@ -14,6 +14,15 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
+} from "@/components/ui/chart";
 
 const DailyReport: React.FC = () => {
   // Simple state management
@@ -24,7 +33,25 @@ const DailyReport: React.FC = () => {
   const [progress, setProgress] = useState(0);
 
   // Update the date state to use Date object
-  const [date, setDate] = useState<Date>(new Date());
+  const [date, setDate] = useState<Date>(new Date("2024-12-31"));
+
+  // Chart data and config
+  const chartData =
+    sentiment !== null ? [{ name: "Daily Sentiment", value: sentiment }] : [];
+
+  const chartConfig = {
+    value: {
+      label: "Sentiment Score",
+      color:
+        sentiment !== null
+          ? sentiment > 0
+            ? "#22c55e"
+            : sentiment < 0
+            ? "#ef4444"
+            : "#eab308"
+          : "#64748b",
+    },
+  } satisfies ChartConfig;
 
   // Update date navigation functions
   const goToDate = (newDate: Date) => {
@@ -231,8 +258,47 @@ const DailyReport: React.FC = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
-                  <div className="prose prose-lg max-w-none">
+                <CardContent className="space-y-6">
+                  {sentiment !== null && (
+                    <div className="h-[300px] w-full border-b pb-6">
+                      <ChartContainer config={chartConfig} className="h-full">
+                        <BarChart data={chartData}>
+                          <CartesianGrid vertical={false} />
+                          <XAxis
+                            dataKey="name"
+                            tickLine={false}
+                            tickMargin={10}
+                            axisLine={false}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <YAxis
+                            tickLine={false}
+                            axisLine={false}
+                            tickMargin={10}
+                            tickFormatter={(value) => value.toFixed(1)}
+                            domain={[0, 10]}
+                            ticks={[0, 2, 4, 6, 8, 10]}
+                            tick={{ fontSize: 12 }}
+                            label={{
+                              value: "Sentiment Score",
+                              angle: -90,
+                              position: "insideLeft",
+                              style: { fontSize: 12 },
+                            }}
+                          />
+                          <ChartTooltip content={<ChartTooltipContent />} />
+                          <ChartLegend content={<ChartLegendContent />} />
+                          <Bar
+                            dataKey="value"
+                            fill="var(--color-value)"
+                            radius={4}
+                            barSize={40}
+                          />
+                        </BarChart>
+                      </ChartContainer>
+                    </div>
+                  )}
+                  <div className="prose prose-lg max-w-none pt-4">
                     <div className="whitespace-pre-wrap text-foreground leading-relaxed">
                       {summary}
                     </div>
