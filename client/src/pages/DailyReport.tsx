@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { fetchDailyReport } from "@/lib/api";
+import { motion } from "framer-motion";
 
 interface DailyReportData {
   summary: string;
@@ -21,6 +22,7 @@ const DailyReport: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [inputDate, setInputDate] = useState<string>("2024-12-31");
+  const [progress, setProgress] = useState(0);
 
   // Update date navigation functions
   const goToDate = (newDate: Date) => {
@@ -85,8 +87,18 @@ const DailyReport: React.FC = () => {
       try {
         setLoading(true);
         setError(null);
+        setProgress(0);
+
+        // Start progress simulation
+        const progressInterval = setInterval(() => {
+          setProgress((p) => (p >= 90 ? 90 : p + 10));
+        }, 500);
+
         const reportData = await fetchDailyReport(date);
+
         if (isMounted) {
+          clearInterval(progressInterval);
+          setProgress(100);
           setData(reportData);
         }
       } catch (err) {
@@ -99,6 +111,7 @@ const DailyReport: React.FC = () => {
       } finally {
         if (isMounted) {
           setLoading(false);
+          setProgress(0);
         }
       }
     };
@@ -148,73 +161,92 @@ const DailyReport: React.FC = () => {
   );
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-muted/50">
+    <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="container mx-auto py-8 px-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col gap-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+            <div className="flex flex-col items-center text-center mb-8">
+              <div className="flex items-center gap-4 mb-2">
                 <div className="p-2 bg-primary/10 rounded-lg">
-                  <Newspaper className="h-6 w-6 text-primary" />
+                  <Newspaper className="h-8 w-8 text-primary" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-bold">Daily News Report</h1>
-                  <p className="text-sm text-muted-foreground">
-                    Stay informed with your daily news summary
-                  </p>
-                </div>
+                <h1 className="text-4xl font-bold">Daily News Report</h1>
               </div>
+              <p className="text-sm text-muted-foreground">
+                Stay informed with your daily news summary
+              </p>
+            </div>
 
-              {/* Date Controls */}
+            {/* Date Controls */}
+            <div className="flex items-center justify-center gap-2 mb-6">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goBack}
+                className="h-9 w-9"
+                disabled={loading}
+              >
+                ←
+              </Button>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goBack}
-                  className="h-9 w-9"
+                <input
+                  type="date"
+                  value={inputDate}
+                  onChange={handleDateChange}
+                  onKeyDown={handleKeyDown}
+                  max={format(new Date(), "yyyy-MM-dd")}
+                  className="h-9 px-3 py-2 border rounded-md bg-background text-foreground"
                   disabled={loading}
-                >
-                  ←
-                </Button>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="date"
-                    value={inputDate}
-                    onChange={handleDateChange}
-                    onKeyDown={handleKeyDown}
-                    max={format(new Date(), "yyyy-MM-dd")}
-                    className="h-9 px-3 py-2 border rounded-md bg-background"
-                    disabled={loading}
-                  />
-                  <Button
-                    variant="default"
-                    onClick={handleSearch}
-                    disabled={loading || !inputDate}
-                  >
-                    Search
-                  </Button>
-                </div>
+                />
                 <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={goForward}
-                  className="h-9 w-9"
-                  disabled={loading || date >= new Date()}
+                  variant="default"
+                  onClick={handleSearch}
+                  disabled={loading || !inputDate}
                 >
-                  →
+                  Search
                 </Button>
               </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={goForward}
+                className="h-9 w-9"
+                disabled={loading || date >= new Date()}
+              >
+                →
+              </Button>
             </div>
 
             {/* Loading State */}
             {loading && (
-              <div className="space-y-2">
-                <Progress value={100} className="h-1" />
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4" />
-                    <span>Loading your daily report...</span>
+              <div className="space-y-4">
+                <div className="relative">
+                  <div className="relative">
+                    <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
+                      <motion.div
+                        animate={{
+                          rotate: 360,
+                        }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                      >
+                        <Clock className="h-4 w-4" />
+                      </motion.div>
+                      <span>Fetching your daily report...</span>
+                    </div>
+                    <Progress
+                      value={progress}
+                      className="h-3 rounded-full bg-primary/5"
+                    />
+                    <div className="flex justify-center mt-2">
+                      <span className="text-2xl font-bold text-primary">
+                        {progress}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -329,12 +361,12 @@ const DailyReport: React.FC = () => {
                           return (
                             <div
                               key={index}
-                              className="p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors"
+                              className="p-4 rounded-lg bg-card border shadow-sm hover:shadow-md transition-all duration-200"
                             >
                               <h3 className="font-semibold text-lg mb-2 text-primary">
                                 {title}
                               </h3>
-                              <p className="text-foreground">{content}</p>
+                              <p className="text-foreground/90">{content}</p>
                             </div>
                           );
                         })}

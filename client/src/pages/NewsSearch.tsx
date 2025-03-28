@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Check, X, Calendar as CalendarIcon } from "lucide-react";
+import { Search, Check, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,21 +12,17 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
-  Command,
-  CommandInput,
-  CommandList,
-  CommandItem,
-  CommandEmpty,
-} from "@/components/ui/command";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArticleCard } from "@/components/articles/ArticleCard";
 import { ArticleLoadingState } from "@/components/articles/ArticleLoadingState";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format } from "date-fns";
+import { Progress } from "@/components/ui/progress";
 
 interface NewsArticle {
   title: string;
@@ -86,6 +82,8 @@ const NewsSearch: React.FC = () => {
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [hasSearched, setHasSearched] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [searchProgress, setSearchProgress] = useState(0);
 
   // Fetch available sources on component mount
   useEffect(() => {
@@ -103,6 +101,8 @@ const NewsSearch: React.FC = () => {
         if (data.status === "error") {
           throw new Error(data.message || "Failed to fetch sources");
         }
+        // Add artificial delay to match loading animation
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         setSources(data.sources);
       } catch (err) {
         console.error("Error fetching sources:", err);
@@ -113,6 +113,44 @@ const NewsSearch: React.FC = () => {
 
     fetchSources();
   }, []);
+
+  // Simulate loading progress for sources
+  useEffect(() => {
+    if (loadingSources) {
+      setLoadingProgress(0);
+      const progressInterval = setInterval(() => {
+        setLoadingProgress((prev) => {
+          const next = prev + 4;
+          if (next >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return next;
+        });
+      }, 60);
+
+      return () => clearInterval(progressInterval);
+    }
+  }, [loadingSources]);
+
+  // Simulate loading progress for search
+  useEffect(() => {
+    if (loading) {
+      setSearchProgress(0);
+      const progressInterval = setInterval(() => {
+        setSearchProgress((prev) => {
+          const next = prev + 4;
+          if (next >= 100) {
+            clearInterval(progressInterval);
+            return 100;
+          }
+          return next;
+        });
+      }, 60);
+
+      return () => clearInterval(progressInterval);
+    }
+  }, [loading]);
 
   const searchArticles = async () => {
     if (!query.trim()) return;
@@ -161,6 +199,8 @@ const NewsSearch: React.FC = () => {
         urlToImage: article.urlToImage,
       }));
 
+      // Add artificial delay to match loading animation
+      await new Promise((resolve) => setTimeout(resolve, 1500));
       setResults(formattedArticles);
     } catch (err) {
       console.error("Error searching articles:", err);
@@ -187,12 +227,17 @@ const NewsSearch: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="h-full bg-background">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">News Search</h1>
-          <p className="text-muted-foreground">
+        <div className="flex flex-col items-center text-center mb-8">
+          <div className="flex items-center gap-4 mb-2">
+            <div className="p-2 bg-primary/10 rounded-lg">
+              <Search className="h-8 w-8 text-primary" />
+            </div>
+            <h1 className="text-4xl font-bold">News Search</h1>
+          </div>
+          <p className="text-sm text-muted-foreground">
             Search articles from trusted news sources
           </p>
         </div>
@@ -221,88 +266,140 @@ const NewsSearch: React.FC = () => {
             </div>
 
             {/* Filters */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              <Select
-                value={sortBy}
-                onValueChange={setSortBy}
-                disabled={loading}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  {SORT_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium">Search Filters</h3>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    setSortBy("relevancy");
+                    setFromDate(undefined);
+                    setToDate(undefined);
+                    setSelectedSources([]);
+                  }}
+                >
+                  Reset All
+                </Button>
+              </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="w-full justify-start"
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    Sort Results
+                    <span className="text-xs text-muted-foreground font-normal">
+                      (
+                      {sortBy === "relevancy"
+                        ? "Best matches first"
+                        : sortBy === "popularity"
+                        ? "Most popular articles"
+                        : "Latest articles first"}
+                      )
+                    </span>
+                  </label>
+                  <Select
+                    value={sortBy}
+                    onValueChange={setSortBy}
                     disabled={loading}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {fromDate ? format(fromDate, "MMM d, yyyy") : "From"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={setFromDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Sort by" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SORT_OPTIONS.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <Popover>
-                <PopoverTrigger asChild>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    Date Range
+                    <span className="text-xs text-muted-foreground font-normal">
+                      (Optional)
+                    </span>
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1">
+                      <input
+                        type="date"
+                        value={fromDate ? format(fromDate, "yyyy-MM-dd") : ""}
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          setFromDate(date);
+                          if (!toDate || date > toDate) {
+                            setToDate(date);
+                          }
+                        }}
+                        max={format(new Date(), "yyyy-MM-dd")}
+                        className="w-full h-9 px-3 py-2 border rounded-md bg-background text-foreground"
+                        disabled={loading}
+                      />
+                    </div>
+                    <span className="text-muted-foreground">to</span>
+                    <div className="flex-1">
+                      <input
+                        type="date"
+                        value={toDate ? format(toDate, "yyyy-MM-dd") : ""}
+                        onChange={(e) => {
+                          const date = new Date(e.target.value);
+                          setToDate(date);
+                          if (!fromDate || date < fromDate) {
+                            setFromDate(date);
+                          }
+                        }}
+                        max={format(new Date(), "yyyy-MM-dd")}
+                        className="w-full h-9 px-3 py-2 border rounded-md bg-background text-foreground"
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium flex items-center gap-2">
+                    News Sources
+                    <span className="text-xs text-muted-foreground font-normal">
+                      ({selectedSources.length} selected)
+                    </span>
+                  </label>
                   <Button
+                    type="button"
                     variant="outline"
-                    className="w-full justify-start"
+                    onClick={() => setOpen(true)}
                     disabled={loading}
+                    className="w-full justify-between bg-background"
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {toDate ? format(toDate, "MMM d, yyyy") : "To"}
+                    {selectedSources.length === 0 ? (
+                      <span className="text-muted-foreground">
+                        Select news sources...
+                      </span>
+                    ) : (
+                      <span>
+                        {selectedSources.length}{" "}
+                        {selectedSources.length === 1 ? "source" : "sources"}{" "}
+                        selected
+                      </span>
+                    )}
                   </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={setToDate}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setOpen(true)}
-                disabled={loading}
-                className="w-full justify-between"
-              >
-                Sources{" "}
-                {selectedSources.length > 0 && `(${selectedSources.length})`}
-              </Button>
+                </div>
+              </div>
             </div>
 
-            {/* Selected Sources */}
+            {/* Selected Sources Tags */}
             {selectedSources.length > 0 && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 pt-2">
                 {selectedSources.map((sourceId) => {
                   const source = sources.find((s) => s.id === sourceId);
                   return (
                     <Badge
                       key={sourceId}
                       variant="secondary"
-                      className="flex items-center gap-1"
+                      className="flex items-center gap-1 bg-primary/10 text-primary hover:bg-primary/20"
                     >
                       {source?.name}
                       <button
@@ -322,10 +419,20 @@ const NewsSearch: React.FC = () => {
         {/* Results */}
         <div className="max-w-6xl mx-auto mt-8">
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <ArticleLoadingState key={i} />
-              ))}
+            <div className="space-y-8">
+              <div className="max-w-lg mx-auto space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">
+                    {Math.round(searchProgress)}%
+                  </span>
+                </div>
+                <Progress value={searchProgress} className="h-2" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[...Array(4)].map((_, i) => (
+                  <ArticleLoadingState key={i} />
+                ))}
+              </div>
             </div>
           ) : results.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -351,48 +458,147 @@ const NewsSearch: React.FC = () => {
       </div>
 
       {/* Sources Dialog */}
-      <Command open={open} onOpenChange={setOpen}>
-        <div className="border-b px-3 py-2">
-          <h2 className="font-semibold">Select Sources</h2>
-        </div>
-        <CommandInput
-          value={searchQuery}
-          onChange={setSearchQuery}
-          placeholder="Search sources..."
-        />
-        <CommandList>
-          {loadingSources ? (
-            <div className="py-4 text-center text-muted-foreground">
-              Loading sources...
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="max-w-2xl w-[90vw]">
+          <DialogHeader>
+            <DialogTitle>Select News Sources</DialogTitle>
+            <DialogDescription>
+              Choose from our curated list of trusted news sources
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* Search and Clear */}
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search sources..."
+                  className="pl-9"
+                />
+              </div>
+              {selectedSources.length > 0 && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedSources([])}
+                  className="text-muted-foreground hover:text-foreground whitespace-nowrap"
+                >
+                  Clear All
+                </Button>
+              )}
             </div>
-          ) : filteredSources.length === 0 ? (
-            <CommandEmpty>No sources found.</CommandEmpty>
-          ) : (
-            filteredSources.map((source) => (
-              <CommandItem
-                key={source.id}
-                onSelect={() => handleSourceSelect(source.id)}
-              >
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      "h-4 w-4 rounded-sm border",
-                      selectedSources.includes(source.id)
-                        ? "bg-primary border-primary"
-                        : "border-muted"
-                    )}
-                  >
-                    {selectedSources.includes(source.id) && (
-                      <Check className="h-3 w-3 text-primary-foreground" />
-                    )}
+
+            {/* Sources List */}
+            <ScrollArea className="h-[400px] rounded-md border bg-muted/5">
+              {loadingSources ? (
+                <div className="h-full flex items-center justify-center">
+                  <div className="w-full max-w-sm space-y-4 p-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium">
+                          {Math.round(loadingProgress)}%
+                        </span>
+                      </div>
+                      <Progress value={loadingProgress} className="h-2" />
+                    </div>
+                    <div className="grid grid-cols-1 gap-3">
+                      {[...Array(5)].map((_, i) => (
+                        <div
+                          key={i}
+                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/10 animate-pulse"
+                        >
+                          <div className="h-4 w-4 rounded-sm bg-muted/20 mt-1" />
+                          <div className="space-y-2 flex-1">
+                            <div className="h-4 w-2/3 bg-muted/20 rounded" />
+                            <div className="space-y-1">
+                              <div className="h-3 w-full bg-muted/20 rounded" />
+                              <div className="h-3 w-4/5 bg-muted/20 rounded" />
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="h-5 w-16 bg-muted/20 rounded-full" />
+                              <div className="h-5 w-12 bg-muted/20 rounded-full" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <span>{source.name}</span>
                 </div>
-              </CommandItem>
-            ))
-          )}
-        </CommandList>
-      </Command>
+              ) : filteredSources.length === 0 ? (
+                <div className="h-full flex items-center justify-center p-8">
+                  <div className="text-center space-y-2">
+                    <Filter className="h-8 w-8 text-muted-foreground mx-auto" />
+                    <p className="text-sm text-muted-foreground">
+                      No sources found matching "{searchQuery}"
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-4 grid grid-cols-1 gap-3">
+                  {filteredSources.map((source) => (
+                    <button
+                      key={source.id}
+                      onClick={() => handleSourceSelect(source.id)}
+                      className={cn(
+                        "flex items-start gap-3 p-3 rounded-lg text-left transition-colors",
+                        "hover:bg-muted/50",
+                        selectedSources.includes(source.id) && "bg-muted/30"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "h-4 w-4 rounded-sm border mt-1 flex items-center justify-center flex-shrink-0",
+                          selectedSources.includes(source.id)
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30"
+                        )}
+                      >
+                        {selectedSources.includes(source.id) && (
+                          <Check className="h-3 w-3 text-primary-foreground" />
+                        )}
+                      </div>
+                      <div className="space-y-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {source.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground line-clamp-2">
+                          {source.description}
+                        </div>
+                        <div className="flex items-center gap-2 text-xs">
+                          <Badge
+                            variant="outline"
+                            className="capitalize bg-muted/30"
+                          >
+                            {source.category}
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="uppercase bg-muted/30"
+                          >
+                            {source.country}
+                          </Badge>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </ScrollArea>
+
+            {/* Selected Count */}
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">
+                {selectedSources.length}{" "}
+                {selectedSources.length === 1 ? "source" : "sources"} selected
+              </span>
+              <Button onClick={() => setOpen(false)}>Done</Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

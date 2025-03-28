@@ -199,7 +199,7 @@ const DateGuessGame: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/20">
+    <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -207,9 +207,14 @@ const DateGuessGame: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="space-y-6"
         >
-          <div className="text-center space-y-2">
-            <h1 className="text-4xl font-bold tracking-tight">Time Traveler</h1>
-            <p className="text-muted-foreground">
+          <div className="flex flex-col items-center text-center mb-8">
+            <div className="flex items-center gap-4 mb-2">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Calendar className="h-8 w-8 text-primary" />
+              </div>
+              <h1 className="text-4xl font-bold">Time Traveler</h1>
+            </div>
+            <p className="text-sm text-muted-foreground">
               Guess the year based on historical events
             </p>
           </div>
@@ -229,18 +234,7 @@ const DateGuessGame: React.FC = () => {
                       from 2000 to 2025.
                     </p>
                   </div>
-                  <div className="space-y-4">
-                    <div className="bg-muted/50 p-4 rounded-lg max-w-lg mx-auto">
-                      <h3 className="font-semibold mb-2">How to Play:</h3>
-                      <ul className="text-sm text-muted-foreground text-left space-y-2">
-                        <li>• Read the historical events presented</li>
-                        <li>• Guess which year (2000-2025) they occurred</li>
-                        <li>
-                          • Get hints if your guess is too high or too low
-                        </li>
-                        <li>• Try to guess in as few attempts as possible!</li>
-                      </ul>
-                    </div>
+                  <div>
                     <Button
                       onClick={() => setGameStarted(true)}
                       size="lg"
