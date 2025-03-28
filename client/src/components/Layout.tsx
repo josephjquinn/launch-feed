@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Home, Rocket, Newspaper, Search, Gamepad2 } from "lucide-react";
+import { Newspaper, Search, Gamepad2 } from "lucide-react";
 
 export default function Layout() {
   const location = useLocation();
@@ -12,14 +12,15 @@ export default function Layout() {
         <nav className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="text-lg font-semibold text-primary">
+              <Link
+                to="/"
+                className="text-lg font-semibold text-primary hover:opacity-80 transition"
+              >
                 Launch Feed
-              </span>
+              </Link>
             </div>
             <ul className="flex items-center gap-1">
               {[
-                { path: "/", icon: Home, label: "Home" },
-                { path: "/launches", icon: Rocket, label: "Launches" },
                 { path: "/daily-report", icon: Newspaper, label: "Daily" },
                 { path: "/news-search", icon: Search, label: "Search" },
                 { path: "/date-guess-game", icon: Gamepad2, label: "Game" },
