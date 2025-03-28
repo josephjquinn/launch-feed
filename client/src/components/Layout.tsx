@@ -1,5 +1,5 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
-import { Newspaper, Search, Gamepad2 } from "lucide-react";
+import { Newspaper, Search, Gamepad2, Sparkles } from "lucide-react";
 
 export default function Layout() {
   const location = useLocation();
@@ -9,12 +9,12 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-50 bg-background border-b border-border/30">
-        <nav className="container mx-auto px-4 py-2">
+        <nav className="container mx-auto px-0 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 -ml-16">
               <Link
                 to="/"
-                className="text-lg font-semibold text-primary hover:opacity-80 transition"
+                className="text-lg font-semibold text-primary hover:opacity-80 transition px-2"
               >
                 Launch Feed
               </Link>
@@ -22,6 +22,7 @@ export default function Layout() {
             <ul className="flex items-center gap-1">
               {[
                 { path: "/daily-report", icon: Newspaper, label: "Daily" },
+                { path: "/top-headlines", icon: Sparkles, label: "Top" },
                 { path: "/news-search", icon: Search, label: "Search" },
                 { path: "/date-guess-game", icon: Gamepad2, label: "Game" },
               ].map(({ path, icon: Icon, label }) => (
