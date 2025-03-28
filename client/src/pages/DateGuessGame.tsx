@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { fetchWithRetry, validateResponse } from "@/lib/api";
 
 const DateGuessGame: React.FC = () => {
+  const [gameStarted, setGameStarted] = useState(false);
   const [summary, setSummary] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -182,10 +183,12 @@ const DateGuessGame: React.FC = () => {
     }
   };
 
-  // Load initial date when component mounts
+  // Load initial date when game starts
   useEffect(() => {
-    loadNewDate();
-  }, [loadNewDate]);
+    if (gameStarted) {
+      loadNewDate();
+    }
+  }, [loadNewDate, gameStarted]);
 
   const LoadingSkeleton = () => (
     <div className="space-y-6">
@@ -211,228 +214,278 @@ const DateGuessGame: React.FC = () => {
             </p>
           </div>
 
-          <Card className="border-2">
-            <CardContent className="p-6">
-              <div className="space-y-6">
-                {loading && (
+          {!gameStarted ? (
+            <Card className="border-2">
+              <CardContent className="p-6">
+                <div className="text-center space-y-6">
                   <div className="space-y-4">
-                    <div className="relative">
-                      <div className="relative">
-                        <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
-                          <motion.div
-                            animate={{
-                              rotate: 360,
-                            }}
-                            transition={{
-                              duration: 2,
-                              repeat: Infinity,
-                              ease: "linear",
-                            }}
-                          >
-                            <Clock className="h-4 w-4" />
-                          </motion.div>
-                          <span>
-                            {loadingStep === 0 && "Initializing..."}
-                            {loadingStep === 1 && "Generating random date..."}
-                            {loadingStep === 2 && "Fetching historical data..."}
-                            {loadingStep === 3 && "Processing information..."}
-                            {loadingStep === 4 && "Finalizing..."}
-                          </span>
-                        </div>
-                        <Progress
-                          value={progress}
-                          className="h-3 rounded-full bg-primary/5"
-                        />
-                        <div className="flex justify-center mt-2">
-                          <span className="text-2xl font-bold text-primary">
-                            {progress}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                    <Calendar className="h-24 w-24 mx-auto text-primary" />
+                    <h2 className="text-2xl font-bold">
+                      Welcome to Time Traveler!
+                    </h2>
+                    <p className="text-muted-foreground max-w-lg mx-auto">
+                      Travel through time by reading historical events and
+                      guessing their year. Test your knowledge of recent history
+                      from 2000 to 2025.
+                    </p>
                   </div>
-                )}
-
-                {error && (
-                  <Alert variant="destructive">
-                    <AlertDescription>{error}</AlertDescription>
-                  </Alert>
-                )}
-
-                {loading ? (
-                  <LoadingSkeleton />
-                ) : (
-                  <motion.div
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.3 }}
-                    className="space-y-6"
-                  >
-                    <div className="bg-muted/50 p-6 rounded-xl">
-                      <h2 className="text-xl font-semibold mb-4">
-                        What happened on this day?
-                      </h2>
-                      <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                        {summary}
-                      </p>
+                  <div className="space-y-4">
+                    <div className="bg-muted/50 p-4 rounded-lg max-w-lg mx-auto">
+                      <h3 className="font-semibold mb-2">How to Play:</h3>
+                      <ul className="text-sm text-muted-foreground text-left space-y-2">
+                        <li>• Read the historical events presented</li>
+                        <li>• Guess which year (2000-2025) they occurred</li>
+                        <li>
+                          • Get hints if your guess is too high or too low
+                        </li>
+                        <li>• Try to guess in as few attempts as possible!</li>
+                      </ul>
                     </div>
-
+                    <Button
+                      onClick={() => setGameStarted(true)}
+                      size="lg"
+                      className="w-full sm:w-auto min-w-[200px] h-12 text-lg"
+                    >
+                      Start Game
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-2">
+              <CardContent className="p-6">
+                <div className="space-y-6">
+                  {loading && (
                     <div className="space-y-4">
-                      <div className="flex flex-col sm:flex-row gap-4 items-center">
-                        <div className="relative flex-1">
-                          <Input
-                            type="number"
-                            value={guessYear}
-                            onChange={handleYearChange}
-                            onKeyDown={handleKeyDown}
-                            placeholder="Enter year (2000-2025)"
-                            className="w-full text-center text-2xl h-14"
-                            min={2000}
-                            max={2025}
-                            disabled={loading || showAnswer || isCorrect}
+                      <div className="relative">
+                        <div className="relative">
+                          <div className="flex items-center gap-2 text-sm font-medium text-primary mb-2">
+                            <motion.div
+                              animate={{
+                                rotate: 360,
+                              }}
+                              transition={{
+                                duration: 2,
+                                repeat: Infinity,
+                                ease: "linear",
+                              }}
+                            >
+                              <Clock className="h-4 w-4" />
+                            </motion.div>
+                            <span>
+                              {loadingStep === 0 && "Initializing..."}
+                              {loadingStep === 1 && "Generating random date..."}
+                              {loadingStep === 2 &&
+                                "Fetching historical data..."}
+                              {loadingStep === 3 && "Processing information..."}
+                              {loadingStep === 4 && "Finalizing..."}
+                            </span>
+                          </div>
+                          <Progress
+                            value={progress}
+                            className="h-3 rounded-full bg-primary/5"
                           />
+                          <div className="flex justify-center mt-2">
+                            <span className="text-2xl font-bold text-primary">
+                              {progress}%
+                            </span>
+                          </div>
                         </div>
-                        <Button
-                          onClick={handleGuess}
-                          size="lg"
-                          className="w-full sm:w-48 h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200"
-                          disabled={
-                            loading ||
-                            !guessYear ||
-                            guessYear.length !== 4 ||
-                            parseInt(guessYear) < 2000 ||
-                            parseInt(guessYear) > 2025 ||
-                            showAnswer ||
-                            isCorrect
-                          }
-                        >
-                          <span className="text-lg font-medium">Guess</span>
-                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {error && (
+                    <Alert variant="destructive">
+                      <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                  )}
+
+                  {loading ? (
+                    <LoadingSkeleton />
+                  ) : (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{ duration: 0.3 }}
+                      className="space-y-6"
+                    >
+                      <div className="bg-muted/50 p-6 rounded-xl">
+                        <h2 className="text-xl font-semibold mb-4">
+                          What happened on this day?
+                        </h2>
+                        <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                          {summary}
+                        </p>
                       </div>
 
-                      <AnimatePresence>
-                        {(lastGuess || showAnswer) && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="space-y-4"
+                      <div className="space-y-4">
+                        <div className="flex flex-col sm:flex-row gap-4 items-center">
+                          <div className="relative flex-1">
+                            <Input
+                              type="number"
+                              value={guessYear}
+                              onChange={handleYearChange}
+                              onKeyDown={handleKeyDown}
+                              placeholder="Enter year (2000-2025)"
+                              className="w-full text-center text-2xl h-14"
+                              min={2000}
+                              max={2025}
+                              disabled={loading || showAnswer || isCorrect}
+                            />
+                          </div>
+                          <Button
+                            onClick={handleGuess}
+                            size="lg"
+                            className="w-full sm:w-48 h-14 bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all duration-200"
+                            disabled={
+                              loading ||
+                              !guessYear ||
+                              guessYear.length !== 4 ||
+                              parseInt(guessYear) < 2000 ||
+                              parseInt(guessYear) > 2025 ||
+                              showAnswer ||
+                              isCorrect
+                            }
                           >
-                            <div
-                              className={`relative overflow-hidden rounded-xl ${
-                                isCorrect
-                                  ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30"
-                                  : "bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30"
-                              }`}
-                            >
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
-                              <div className="relative p-6">
-                                <div className="flex flex-col items-center text-center space-y-4">
-                                  <motion.div
-                                    animate={{
-                                      scale: [1, 1.2, 1],
-                                      rotate: isCorrect
-                                        ? [0, 10, -10, 0]
-                                        : [0, -10, 10, 0],
-                                    }}
-                                    transition={{
-                                      duration: 0.5,
-                                      repeat: 1,
-                                      repeatDelay: 0.2,
-                                    }}
-                                  >
-                                    {isCorrect ? (
-                                      <Trophy className="h-12 w-12 text-green-500" />
-                                    ) : (
-                                      <XCircle className="h-12 w-12 text-red-500" />
-                                    )}
-                                  </motion.div>
+                            <span className="text-lg font-medium">Guess</span>
+                          </Button>
+                        </div>
 
-                                  <div className="space-y-2">
-                                    <h3
-                                      className={`text-2xl font-bold ${
-                                        isCorrect
-                                          ? "text-green-500"
-                                          : "text-red-500"
-                                      }`}
+                        <AnimatePresence>
+                          {(lastGuess || showAnswer) && (
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: -10 }}
+                              className="space-y-4"
+                            >
+                              <div
+                                className={`relative overflow-hidden rounded-xl ${
+                                  isCorrect
+                                    ? "bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30"
+                                    : "bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30"
+                                }`}
+                              >
+                                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-shimmer" />
+                                <div className="relative p-6">
+                                  <div className="flex flex-col items-center text-center space-y-4">
+                                    <motion.div
+                                      animate={{
+                                        scale: [1, 1.2, 1],
+                                        rotate: isCorrect
+                                          ? [0, 10, -10, 0]
+                                          : [0, -10, 10, 0],
+                                      }}
+                                      transition={{
+                                        duration: 0.5,
+                                        repeat: 1,
+                                        repeatDelay: 0.2,
+                                      }}
                                     >
-                                      {isCorrect ? "Correct!" : "Not Quite!"}
-                                    </h3>
-                                    {!isCorrect && lastGuess && targetDate && (
-                                      <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
-                                        <motion.div
-                                          animate={{
-                                            y: [0, -5, 0],
-                                            scale: [1, 1.2, 1],
-                                          }}
-                                          transition={{
-                                            duration: 0.5,
-                                            repeat: Infinity,
-                                            repeatDelay: 1,
-                                          }}
-                                        >
-                                          {lastGuess <
-                                          targetDate.getFullYear() ? (
-                                            <ArrowUp className="h-6 w-6 text-red-500" />
-                                          ) : (
-                                            <ArrowDown className="h-6 w-6 text-red-500" />
-                                          )}
-                                        </motion.div>
-                                        <span>
-                                          Try{" "}
-                                          {lastGuess < targetDate.getFullYear()
-                                            ? "higher"
-                                            : "lower"}
-                                        </span>
+                                      {isCorrect ? (
+                                        <Trophy className="h-12 w-12 text-green-500" />
+                                      ) : (
+                                        <XCircle className="h-12 w-12 text-red-500" />
+                                      )}
+                                    </motion.div>
+
+                                    <div className="space-y-2">
+                                      <h3
+                                        className={`text-2xl font-bold ${
+                                          isCorrect
+                                            ? "text-green-500"
+                                            : "text-red-500"
+                                        }`}
+                                      >
+                                        {isCorrect ? "Correct!" : "Not Quite!"}
+                                      </h3>
+                                      {isCorrect && targetDate && (
+                                        <div className="text-lg text-muted-foreground">
+                                          This happened on{" "}
+                                          {format(targetDate, "MMMM d, yyyy")}
+                                        </div>
+                                      )}
+                                      {!isCorrect &&
+                                        lastGuess &&
+                                        targetDate && (
+                                          <div className="flex items-center justify-center gap-2 text-lg text-muted-foreground">
+                                            <motion.div
+                                              animate={{
+                                                y: [0, -5, 0],
+                                                scale: [1, 1.2, 1],
+                                              }}
+                                              transition={{
+                                                duration: 0.5,
+                                                repeat: Infinity,
+                                                repeatDelay: 1,
+                                              }}
+                                            >
+                                              {lastGuess <
+                                              targetDate.getFullYear() ? (
+                                                <ArrowUp className="h-6 w-6 text-red-500" />
+                                              ) : (
+                                                <ArrowDown className="h-6 w-6 text-red-500" />
+                                              )}
+                                            </motion.div>
+                                            <span>
+                                              Try{" "}
+                                              {lastGuess <
+                                              targetDate.getFullYear()
+                                                ? "higher"
+                                                : "lower"}
+                                            </span>
+                                          </div>
+                                        )}
+                                    </div>
+
+                                    {!showAnswer && !isCorrect && (
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setShowAnswer(true)}
+                                        className="w-full max-w-xs"
+                                        size="lg"
+                                      >
+                                        <Eye className="h-5 w-5 mr-2" />
+                                        Reveal Answer
+                                      </Button>
+                                    )}
+
+                                    {showAnswer && (
+                                      <div className="w-full max-w-xs p-4 bg-background/50 rounded-lg border border-border">
+                                        <div className="text-lg font-medium mb-2 text-muted-foreground">
+                                          The year was:
+                                        </div>
+                                        <div className="text-4xl font-bold text-primary">
+                                          {format(targetDate!, "yyyy")}
+                                        </div>
                                       </div>
                                     )}
                                   </div>
-
-                                  {!showAnswer && !isCorrect && (
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => setShowAnswer(true)}
-                                      className="w-full max-w-xs"
-                                      size="lg"
-                                    >
-                                      <Eye className="h-5 w-5 mr-2" />
-                                      Reveal Answer
-                                    </Button>
-                                  )}
-
-                                  {showAnswer && (
-                                    <div className="w-full max-w-xs p-4 bg-background/50 rounded-lg border border-border">
-                                      <div className="text-lg font-medium mb-2 text-muted-foreground">
-                                        The year was:
-                                      </div>
-                                      <div className="text-4xl font-bold text-primary">
-                                        {format(targetDate!, "yyyy")}
-                                      </div>
-                                    </div>
-                                  )}
                                 </div>
                               </div>
-                            </div>
 
-                            <Button
-                              onClick={loadNewDate}
-                              className="w-full"
-                              size="lg"
-                              variant="secondary"
-                            >
-                              <Calendar className="h-5 w-5 mr-2" />
-                              Try Another Date
-                            </Button>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                  </motion.div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                              <Button
+                                onClick={loadNewDate}
+                                className="w-full"
+                                size="lg"
+                                variant="secondary"
+                              >
+                                <Calendar className="h-5 w-5 mr-2" />
+                                Try Another Date
+                              </Button>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </motion.div>
       </div>
     </div>

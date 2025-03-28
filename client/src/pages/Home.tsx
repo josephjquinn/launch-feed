@@ -29,7 +29,7 @@ export default function Home() {
             <img
               src="/pal.png"
               alt="Launch Feed Logo"
-              className="w-40 h-40 mx-auto object-contain"
+              className="w-40 h-40 mx-auto object-contain invert"
             />
           </motion.div>
           <motion.h1
