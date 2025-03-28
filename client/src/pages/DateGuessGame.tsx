@@ -199,7 +199,7 @@ const DateGuessGame: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-[calc(100vh-4rem)] bg-background">
       <div className="container mx-auto p-4 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -215,7 +215,7 @@ const DateGuessGame: React.FC = () => {
               <h1 className="text-4xl font-bold">Time Traveler</h1>
             </div>
             <p className="text-sm text-muted-foreground">
-              Guess the year based on historical events
+              Guess the year based on the news events
             </p>
           </div>
 
@@ -270,8 +270,7 @@ const DateGuessGame: React.FC = () => {
                             <span>
                               {loadingStep === 0 && "Initializing..."}
                               {loadingStep === 1 && "Generating random date..."}
-                              {loadingStep === 2 &&
-                                "Fetching historical data..."}
+                              {loadingStep === 2 && "Aggregating news data..."}
                               {loadingStep === 3 && "Processing information..."}
                               {loadingStep === 4 && "Finalizing..."}
                             </span>
