@@ -1,17 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { Newspaper, Calendar, Clock } from "lucide-react";
+import { Newspaper, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { format } from "date-fns";
 import { fetchDailyReport } from "@/lib/api";
 
@@ -23,26 +17,61 @@ interface DailyReportData {
 
 const DailyReport: React.FC = () => {
   const [data, setData] = useState<DailyReportData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [date, setDate] = useState<Date>(new Date("2024-12-31"));
+  const [date, setDate] = useState<Date | null>(null);
+  const [inputDate, setInputDate] = useState<string>("2024-12-31");
 
   // Update date navigation functions
   const goToDate = (newDate: Date) => {
     if (newDate <= new Date()) {
-      setDate(newDate);
+      // Ensure we're working with the local date
+      const localDate = new Date(
+        newDate.getFullYear(),
+        newDate.getMonth(),
+        newDate.getDate()
+      );
+      setDate(localDate);
+      setInputDate(format(localDate, "yyyy-MM-dd"));
     }
   };
 
+  const handleSearch = () => {
+    // Create date in local timezone by adding time component
+    const parsedDate = new Date(inputDate + "T00:00:00");
+    if (!isNaN(parsedDate.getTime()) && parsedDate <= new Date()) {
+      goToDate(parsedDate);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleSearch();
+    }
+  };
+
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputDate(e.target.value);
+  };
+
   const goBack = () => {
-    const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() - 1);
+    if (!date) return;
+    const newDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() - 1
+    );
     goToDate(newDate);
   };
 
   const goForward = () => {
-    const newDate = new Date(date);
-    newDate.setDate(newDate.getDate() + 1);
+    if (!date) return;
+    const newDate = new Date(
+      date.getFullYear(),
+      date.getMonth(),
+      date.getDate() + 1
+    );
     goToDate(newDate);
   };
 
@@ -51,6 +80,8 @@ const DailyReport: React.FC = () => {
     let isMounted = true;
 
     const fetchReport = async () => {
+      if (!date) return;
+
       try {
         setLoading(true);
         setError(null);
@@ -80,7 +111,8 @@ const DailyReport: React.FC = () => {
   }, [date]);
 
   // Update date formatting
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
+    if (!date) return "";
     return format(date, "EEEE, MMMM d, yyyy");
   };
 
@@ -145,29 +177,24 @@ const DailyReport: React.FC = () => {
                 >
                   ←
                 </Button>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className="flex items-center gap-2 px-3 py-2 bg-background"
-                      disabled={loading}
-                    >
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      {format(date, "PPP")}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="end">
-                    <CalendarComponent
-                      mode="single"
-                      selected={date}
-                      onSelect={(newDate: Date | undefined) =>
-                        newDate && goToDate(newDate)
-                      }
-                      disabled={(date: Date) => date > new Date()}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="date"
+                    value={inputDate}
+                    onChange={handleDateChange}
+                    onKeyDown={handleKeyDown}
+                    max={format(new Date(), "yyyy-MM-dd")}
+                    className="h-9 px-3 py-2 border rounded-md bg-background"
+                    disabled={loading}
+                  />
+                  <Button
+                    variant="default"
+                    onClick={handleSearch}
+                    disabled={loading || !inputDate}
+                  >
+                    Search
+                  </Button>
+                </div>
                 <Button
                   variant="outline"
                   size="icon"
@@ -194,7 +221,15 @@ const DailyReport: React.FC = () => {
             )}
 
             {/* Content */}
-            {loading ? (
+            {!date ? (
+              <Card className="border-none shadow-lg">
+                <CardContent className="p-6">
+                  <div className="text-center text-muted-foreground">
+                    Enter a date and click Search to view the daily report
+                  </div>
+                </CardContent>
+              </Card>
+            ) : loading ? (
               <LoadingSkeleton />
             ) : error ? (
               <Alert variant="destructive">
@@ -287,14 +322,22 @@ const DailyReport: React.FC = () => {
                     </TabsContent>
                     <TabsContent value="topics" className="mt-4">
                       <div className="space-y-4">
-                        {data.topics.map((topic, index) => (
-                          <div
-                            key={index}
-                            className="p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors"
-                          >
-                            <p className="text-foreground">{topic}</p>
-                          </div>
-                        ))}
+                        {data.topics.map((topic, index) => {
+                          const [title, content] = topic
+                            .split(":")
+                            .map((part) => part.trim());
+                          return (
+                            <div
+                              key={index}
+                              className="p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors"
+                            >
+                              <h3 className="font-semibold text-lg mb-2 text-primary">
+                                {title}
+                              </h3>
+                              <p className="text-foreground">{content}</p>
+                            </div>
+                          );
+                        })}
                       </div>
                     </TabsContent>
                   </Tabs>
