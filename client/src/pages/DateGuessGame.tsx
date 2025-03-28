@@ -1,5 +1,5 @@
 import { nytDailyReport, recapTopics } from "@recap/sdk";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import client from "../lib/foundry";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { fetchWithRetry, validateResponse } from "@/lib/api";
 
 const DateGuessGame: React.FC = () => {
   const [summary, setSummary] = useState("");
@@ -50,16 +51,51 @@ const DateGuessGame: React.FC = () => {
     }
   };
 
-  // Check if the summary is valid
-  const isValidSummary = (summary: string) => {
-    return (
-      summary.trim() !==
-      "Please provide a statement or question for me to assist you with."
-    );
-  };
+  // Fetch data for a specific date
+  const fetchDateData = useCallback(async (dateStr: string) => {
+    try {
+      // Fetch summary and topics in parallel with retry logic
+      const [summaryResult, topicsResult] = await Promise.all([
+        fetchWithRetry(() =>
+          client(nytDailyReport).executeFunction({
+            selectedDate: dateStr,
+          })
+        ),
+        fetchWithRetry(() =>
+          client(recapTopics).executeFunction({
+            inputDate: dateStr,
+          })
+        ),
+      ]);
+
+      // Check for no data case
+      if (
+        typeof summaryResult === "string" &&
+        summaryResult.trim().includes("no articles or rows provided")
+      ) {
+        throw new Error("No articles found for this date");
+      }
+
+      // Validate responses
+      if (!validateResponse(summaryResult, "summary")) {
+        throw new Error("Invalid summary data received");
+      }
+      if (!validateResponse(topicsResult, "topics")) {
+        throw new Error("Invalid topics data received");
+      }
+
+      return {
+        summary: summaryResult.trim(),
+        topics: Array.isArray(topicsResult) ? topicsResult : [],
+      };
+    } catch (err) {
+      console.error("Error fetching date data:", err);
+      throw err;
+    }
+  }, []);
 
   // Load new random date and its data
-  const loadNewDate = async () => {
+  const loadNewDate = useCallback(async () => {
     setLoading(true);
     setProgress(0);
     setLoadingStep(0);
@@ -69,60 +105,6 @@ const DateGuessGame: React.FC = () => {
     setLastGuess(null);
     setIsCorrect(false);
 
-    let attempts = 0;
-    const maxAttempts = 5;
-
-    const tryLoadDate = async () => {
-      const newDate = generateRandomDate();
-      setTargetDate(newDate);
-      setLoadingStep(1);
-
-      try {
-        const dateStr = format(newDate, "yyyy-MM-dd");
-        setLoadingStep(2);
-
-        // Fetch summary and topics in parallel
-        const [summaryResult, topicsResult] = await Promise.all([
-          client(nytDailyReport)
-            .executeFunction({
-              selectedDate: dateStr,
-            })
-            .catch((err) => {
-              console.error("Error fetching summary:", err);
-              return null;
-            }),
-          client(recapTopics)
-            .executeFunction({
-              inputDate: dateStr,
-            })
-            .catch((err) => {
-              console.error("Error fetching topics:", err);
-              return null;
-            }),
-        ]);
-
-        // Validate the results
-        if (!summaryResult || !topicsResult) {
-          console.log("Invalid data received, retrying...");
-          return false;
-        }
-
-        if (
-          typeof summaryResult === "string" &&
-          isValidSummary(summaryResult)
-        ) {
-          setSummary(summaryResult.trim());
-          setTopics(Array.isArray(topicsResult) ? topicsResult : []);
-          setLoadingStep(3);
-          return true;
-        }
-        return false;
-      } catch (err) {
-        console.error("Error in tryLoadDate:", err);
-        return false;
-      }
-    };
-
     // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress((p) => (p >= 90 ? 90 : p + 10));
@@ -130,18 +112,26 @@ const DateGuessGame: React.FC = () => {
 
     try {
       let success = false;
-      while (!success && attempts < maxAttempts) {
-        attempts++;
-        success = await tryLoadDate();
-        if (!success) {
+
+      while (!success) {
+        setLoadingStep(1);
+
+        const newDate = generateRandomDate();
+        setTargetDate(newDate);
+        setLoadingStep(2);
+
+        try {
+          const dateStr = format(newDate, "yyyy-MM-dd");
+          const data = await fetchDateData(dateStr);
+
+          setSummary(data.summary);
+          setTopics(data.topics);
+          setLoadingStep(3);
+          success = true;
+        } catch (err) {
+          console.log("Attempt failed:", err);
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-      }
-
-      if (!success) {
-        throw new Error(
-          "Could not find a date with valid data after multiple attempts. Please try again."
-        );
       }
 
       clearInterval(progressInterval);
@@ -151,9 +141,9 @@ const DateGuessGame: React.FC = () => {
       setError(
         err instanceof Error
           ? err.message
-          : "Failed to load data for this date. Please try again."
+          : "An unexpected error occurred. Please try again."
       );
-      console.error(err);
+      console.error("Error in loadNewDate:", err);
     } finally {
       setTimeout(() => {
         setLoading(false);
@@ -161,7 +151,7 @@ const DateGuessGame: React.FC = () => {
         setLoadingStep(0);
       }, 500);
     }
-  };
+  }, [fetchDateData]);
 
   // Handle guess submission
   const handleGuess = () => {
@@ -188,7 +178,7 @@ const DateGuessGame: React.FC = () => {
   // Load initial date when component mounts
   useEffect(() => {
     loadNewDate();
-  }, []);
+  }, [loadNewDate]);
 
   const LoadingSkeleton = () => (
     <div className="space-y-6">

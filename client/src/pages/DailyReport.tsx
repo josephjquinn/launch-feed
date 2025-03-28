@@ -1,6 +1,4 @@
-import { nytDailyReport, recapSentiment, recapTopics } from "@recap/sdk";
 import React, { useEffect, useState } from "react";
-import client from "../lib/foundry";
 import { Newspaper, Calendar, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -15,17 +13,18 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { format } from "date-fns";
+import { fetchDailyReport } from "@/lib/api";
+
+interface DailyReportData {
+  summary: string;
+  topics: string[];
+  sentiment: number | null;
+}
 
 const DailyReport: React.FC = () => {
-  // Simple state management
-  const [summary, setSummary] = useState("");
-  const [topics, setTopics] = useState<string[]>([]);
-  const [sentiment, setSentiment] = useState<number | null>(null);
+  const [data, setData] = useState<DailyReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState(0);
-
-  // Update the date state to use Date object
   const [date, setDate] = useState<Date>(new Date("2024-12-31"));
 
   // Update date navigation functions
@@ -47,58 +46,37 @@ const DailyReport: React.FC = () => {
     goToDate(newDate);
   };
 
-  // Update useEffect to use date string
+  // Update useEffect to use the new API service
   useEffect(() => {
+    let isMounted = true;
+
     const fetchReport = async () => {
       try {
         setLoading(true);
-        setProgress(0);
         setError(null);
-
-        // Simulate progress
-        const interval = setInterval(() => {
-          setProgress((p) => (p >= 90 ? 90 : p + 10));
-        }, 500);
-
-        const dateString = format(date, "yyyy-MM-dd");
-
-        // Fetch summary and topics in parallel
-        const [summaryResult, topicsResult] = await Promise.all([
-          client(nytDailyReport).executeFunction({
-            selectedDate: dateString,
-          }),
-          client(recapTopics).executeFunction({
-            inputDate: dateString,
-          }),
-        ]);
-
-        clearInterval(interval);
-        setProgress(100);
-
-        if (typeof summaryResult === "string") {
-          setSummary(summaryResult.trim());
-          setTopics(Array.isArray(topicsResult) ? topicsResult : []);
-
-          // Get sentiment analysis
-          const sentimentResult = await client(recapSentiment).executeFunction({
-            recap: summaryResult.trim(),
-          });
-
-          if (typeof sentimentResult === "string") {
-            setSentiment(parseFloat(sentimentResult));
-          }
-        } else {
-          setError("Unexpected response format");
+        const reportData = await fetchDailyReport(date);
+        if (isMounted) {
+          setData(reportData);
         }
-      } catch {
-        setError("Failed to fetch report");
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error fetching report:", err);
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch report"
+          );
+        }
       } finally {
-        setLoading(false);
-        setProgress(0);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     fetchReport();
+
+    return () => {
+      isMounted = false;
+    };
   }, [date]);
 
   // Update date formatting
@@ -202,16 +180,15 @@ const DailyReport: React.FC = () => {
               </div>
             </div>
 
-            {/* Progress */}
+            {/* Loading State */}
             {loading && (
               <div className="space-y-2">
-                <Progress value={progress} className="h-1" />
+                <Progress value={100} className="h-1" />
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     <span>Loading your daily report...</span>
                   </div>
-                  <span>{progress}%</span>
                 </div>
               </div>
             )}
@@ -223,7 +200,7 @@ const DailyReport: React.FC = () => {
               <Alert variant="destructive">
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
-            ) : (
+            ) : data && !loading ? (
               <Card className="border-none shadow-lg">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
@@ -233,7 +210,7 @@ const DailyReport: React.FC = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-6">
-                  {sentiment !== null && (
+                  {data.sentiment !== null && (
                     <div className="flex flex-col items-center justify-center space-y-4 border-b pb-6">
                       <div className="relative w-32 h-32">
                         <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -252,9 +229,11 @@ const DailyReport: React.FC = () => {
                             cy="50"
                             r="45"
                             fill="none"
-                            stroke={getSentimentLabel(sentiment).color}
+                            stroke={getSentimentLabel(data.sentiment).color}
                             strokeWidth="8"
-                            strokeDasharray={`${(sentiment / 10) * 283} 283`}
+                            strokeDasharray={`${
+                              (data.sentiment / 10) * 283
+                            } 283`}
                             transform="rotate(-90 50 50)"
                             className="transition-all duration-500"
                           />
@@ -262,7 +241,7 @@ const DailyReport: React.FC = () => {
                         <div className="absolute inset-0 flex items-center justify-center">
                           <div className="text-center">
                             <div className="text-2xl font-bold">
-                              {sentiment.toFixed(1)}
+                              {data.sentiment.toFixed(1)}
                             </div>
                             <div className="text-sm text-muted-foreground">
                               Sentiment
@@ -273,18 +252,20 @@ const DailyReport: React.FC = () => {
                       <div className="flex flex-col items-center gap-1">
                         <div
                           className="text-sm font-medium"
-                          style={{ color: getSentimentLabel(sentiment).color }}
+                          style={{
+                            color: getSentimentLabel(data.sentiment).color,
+                          }}
                         >
-                          {getSentimentLabel(sentiment).text}
+                          {getSentimentLabel(data.sentiment).text}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          {sentiment <= 2
+                          {data.sentiment <= 2
                             ? "Extremely unfavorable news coverage"
-                            : sentiment <= 4
+                            : data.sentiment <= 4
                             ? "Generally unfavorable coverage"
-                            : sentiment <= 6
+                            : data.sentiment <= 6
                             ? "Balanced and neutral coverage"
-                            : sentiment <= 8
+                            : data.sentiment <= 8
                             ? "Generally favorable coverage"
                             : "Extremely favorable news coverage"}
                         </div>
@@ -300,13 +281,13 @@ const DailyReport: React.FC = () => {
                     <TabsContent value="summary" className="mt-4">
                       <div className="prose prose-lg max-w-none pt-4">
                         <div className="whitespace-pre-wrap text-foreground leading-relaxed">
-                          {summary}
+                          {data.summary}
                         </div>
                       </div>
                     </TabsContent>
                     <TabsContent value="topics" className="mt-4">
                       <div className="space-y-4">
-                        {topics.map((topic, index) => (
+                        {data.topics.map((topic, index) => (
                           <div
                             key={index}
                             className="p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-colors"
@@ -319,7 +300,7 @@ const DailyReport: React.FC = () => {
                   </Tabs>
                 </CardContent>
               </Card>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
