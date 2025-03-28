@@ -112,7 +112,8 @@ export const fetchWithRetry = async <T>(
 };
 
 export const fetchDailyReport = async (
-  date: Date
+  date: Date,
+  isGame: boolean = false
 ): Promise<DailyReportData> => {
   const dateString = format(date, "yyyy-MM-dd");
   const cacheKey = `daily-report-${dateString}`;
@@ -129,11 +130,13 @@ export const fetchDailyReport = async (
       fetchWithRetry(() =>
         client(nytDailyReport).executeFunction({
           selectedDate: dateString,
+          game: isGame,
         })
       ),
       fetchWithRetry(() =>
         client(recapTopics).executeFunction({
           inputDate: dateString,
+          game: isGame,
         })
       ),
     ]);

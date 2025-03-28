@@ -1,4 +1,4 @@
-import { nytDailyReport, recapTopics } from "@recap/sdk";
+import { nytDailyReport } from "@recap/sdk";
 import React, { useEffect, useState, useCallback } from "react";
 import client from "../lib/foundry";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +22,6 @@ import { fetchWithRetry, validateResponse } from "@/lib/api";
 
 const DateGuessGame: React.FC = () => {
   const [summary, setSummary] = useState("");
-  const [topics, setTopics] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [targetDate, setTargetDate] = useState<Date | null>(null);
@@ -54,16 +53,12 @@ const DateGuessGame: React.FC = () => {
   // Fetch data for a specific date
   const fetchDateData = useCallback(async (dateStr: string) => {
     try {
-      // Fetch summary and topics in parallel with retry logic
-      const [summaryResult, topicsResult] = await Promise.all([
+      // Fetch summary with retry logic
+      const [summaryResult] = await Promise.all([
         fetchWithRetry(() =>
           client(nytDailyReport).executeFunction({
             selectedDate: dateStr,
-          })
-        ),
-        fetchWithRetry(() =>
-          client(recapTopics).executeFunction({
-            inputDate: dateStr,
+            game: true,
           })
         ),
       ]);
@@ -76,17 +71,13 @@ const DateGuessGame: React.FC = () => {
         throw new Error("No articles found for this date");
       }
 
-      // Validate responses
+      // Validate response
       if (!validateResponse(summaryResult, "summary")) {
         throw new Error("Invalid summary data received");
-      }
-      if (!validateResponse(topicsResult, "topics")) {
-        throw new Error("Invalid topics data received");
       }
 
       return {
         summary: summaryResult.trim(),
-        topics: Array.isArray(topicsResult) ? topicsResult : [],
       };
     } catch (err) {
       console.error("Error fetching date data:", err);
@@ -112,8 +103,11 @@ const DateGuessGame: React.FC = () => {
 
     try {
       let success = false;
+      let attempts = 0;
+      const maxAttempts = 5; // Prevent infinite loops
 
-      while (!success) {
+      while (!success && attempts < maxAttempts) {
+        attempts++;
         setLoadingStep(1);
 
         const newDate = generateRandomDate();
@@ -124,19 +118,34 @@ const DateGuessGame: React.FC = () => {
           const dateStr = format(newDate, "yyyy-MM-dd");
           const data = await fetchDateData(dateStr);
 
-          setSummary(data.summary);
-          setTopics(data.topics);
-          setLoadingStep(3);
-          success = true;
+          if (data && data.summary) {
+            setSummary(data.summary);
+            setLoadingStep(3);
+            success = true;
+          } else {
+            throw new Error("Invalid data received");
+          }
         } catch (err) {
           console.log("Attempt failed:", err);
+          if (attempts >= maxAttempts) {
+            throw new Error(
+              "Failed to find valid data after multiple attempts"
+            );
+          }
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
+      }
+
+      if (!success) {
+        throw new Error("Failed to find valid data after multiple attempts");
       }
 
       clearInterval(progressInterval);
       setProgress(100);
       setLoadingStep(4);
+
+      // Add a small delay to ensure smooth transition
+      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (err) {
       setError(
         err instanceof Error
@@ -145,11 +154,9 @@ const DateGuessGame: React.FC = () => {
       );
       console.error("Error in loadNewDate:", err);
     } finally {
-      setTimeout(() => {
-        setLoading(false);
-        setProgress(0);
-        setLoadingStep(0);
-      }, 500);
+      setLoading(false);
+      setProgress(0);
+      setLoadingStep(0);
     }
   }, [fetchDateData]);
 
@@ -269,35 +276,6 @@ const DateGuessGame: React.FC = () => {
                       <p className="text-foreground/90 leading-relaxed whitespace-pre-wrap">
                         {summary}
                       </p>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2">
-                        <div className="h-5 w-1 bg-primary rounded-full" />
-                        <h3 className="text-lg font-medium">Key Topics</h3>
-                      </div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                        {topics.map((topic, index) => (
-                          <motion.div
-                            key={index}
-                            className="group relative overflow-hidden rounded-lg bg-secondary/50 p-4 hover:bg-secondary/80 transition-colors"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{
-                              duration: 0.3,
-                              delay: index * 0.1,
-                            }}
-                          >
-                            <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="relative flex items-center gap-2">
-                              <div className="h-2 w-2 rounded-full bg-primary/50" />
-                              <span className="text-sm font-medium">
-                                {topic}
-                              </span>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
                     </div>
 
                     <div className="space-y-4">
