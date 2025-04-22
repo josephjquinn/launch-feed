@@ -6,7 +6,6 @@ import { Link } from "react-router-dom";
 export default function Home() {
   return (
     <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden">
-      {/* Subtle background */}
       <div className="absolute inset-0 bg-gradient-to-br from-background via-background/95 to-background/90" />
       <motion.div
         className="absolute inset-0"
@@ -17,7 +16,6 @@ export default function Home() {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-3xl" />
       </motion.div>
 
-      {/* Main Content */}
       <div className="relative container mx-auto px-4">
         <div className="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center">
           <motion.div

@@ -96,7 +96,6 @@ const NewsArticles: React.FC = () => {
       try {
         setLoading(true);
 
-        // Build the filter conditions
         const filterConditions: Record<string, unknown> = {
           pubDate: { $isNull: false },
           headline: { $isNull: false },
@@ -107,7 +106,6 @@ const NewsArticles: React.FC = () => {
           filterConditions.sectionName = selectedSection;
         }
 
-        // Handle date filtering
         const dateConditions: Record<string, unknown> = {};
         if (selectedYear !== "all") {
           dateConditions.$gte = new Date(selectedYear, 0, 1);
@@ -123,7 +121,6 @@ const NewsArticles: React.FC = () => {
           filterConditions.pubDate = dateConditions;
         }
 
-        // Fetch articles with pagination
         const page = await client(NytWosArticle)
           .where(filterConditions)
           .fetchPage({
@@ -155,7 +152,6 @@ const NewsArticles: React.FC = () => {
 
         setArticles(processedArticles);
 
-        // Calculate statistics on the client side
         const totalArticles = processedArticles.length;
         const averageWordCount = Math.round(
           processedArticles.reduce(
@@ -167,7 +163,6 @@ const NewsArticles: React.FC = () => {
           processedArticles.map((article) => article.section)
         ).size;
 
-        // Calculate yearly data
         const yearlyData = processedArticles.reduce((acc, article) => {
           const year = article.year;
           acc[year] = (acc[year] || 0) + 1;
@@ -198,7 +193,6 @@ const NewsArticles: React.FC = () => {
     fetchData();
   }, [selectedSection, selectedYear, fromDate, toDate]);
 
-  // Filter articles based on search query only (since other filters are handled server-side)
   const filteredArticles = articles.filter((article) => {
     if (!searchQuery) return true;
     return (
@@ -207,7 +201,6 @@ const NewsArticles: React.FC = () => {
     );
   });
 
-  // Get unique years for the year selector from the stats
   const years = stats.yearlyData.map((d) => d.year).sort((a, b) => b - a);
 
   return (

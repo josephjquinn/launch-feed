@@ -65,7 +65,6 @@ const TopHeadlines: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loadingProgress, setLoadingProgress] = useState(0);
 
-  // Fetch available sources on component mount
   useEffect(() => {
     const fetchSources = async () => {
       try {
@@ -81,7 +80,6 @@ const TopHeadlines: React.FC = () => {
         if (data.status === "error") {
           throw new Error(data.message || "Failed to fetch sources");
         }
-        // Add artificial delay to match loading animation
         await new Promise((resolve) => setTimeout(resolve, 3000));
         setSources(data.sources);
       } catch (err) {
@@ -94,7 +92,6 @@ const TopHeadlines: React.FC = () => {
     fetchSources();
   }, []);
 
-  // Simulate loading progress for sources
   useEffect(() => {
     if (loadingSources) {
       setLoadingProgress(0);
@@ -113,7 +110,6 @@ const TopHeadlines: React.FC = () => {
     }
   }, [loadingSources]);
 
-  // Fetch top headlines on component mount and when sources change
   useEffect(() => {
     fetchTopHeadlines();
   }, [selectedSources]);
@@ -154,7 +150,6 @@ const TopHeadlines: React.FC = () => {
         urlToImage: article.urlToImage,
       }));
 
-      // Add artificial delay to match loading animation
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setResults(formattedArticles);
     } catch (err) {
@@ -179,7 +174,6 @@ const TopHeadlines: React.FC = () => {
   return (
     <div className="h-full bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -192,7 +186,6 @@ const TopHeadlines: React.FC = () => {
           </p>
         </div>
 
-        {/* Filters */}
         <div className="max-w-2xl mx-auto mb-8">
           <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
             <div className="flex items-center justify-between">
@@ -207,7 +200,6 @@ const TopHeadlines: React.FC = () => {
               </Button>
             </div>
 
-            {/* Selected Sources Tags */}
             {selectedSources.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedSources.map((sourceId) => {
@@ -251,7 +243,6 @@ const TopHeadlines: React.FC = () => {
           </div>
         </div>
 
-        {/* Results */}
         <div className="max-w-6xl mx-auto">
           {loading ? (
             <div className="space-y-8">
@@ -290,7 +281,6 @@ const TopHeadlines: React.FC = () => {
         </div>
       </div>
 
-      {/* Sources Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl w-[90vw]">
           <DialogHeader>
@@ -301,7 +291,6 @@ const TopHeadlines: React.FC = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Search and Clear */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -340,7 +329,6 @@ const TopHeadlines: React.FC = () => {
               </div>
             </div>
 
-            {/* Sources List */}
             <ScrollArea className="h-[400px] rounded-md border bg-muted/5">
               {loadingSources ? (
                 <div className="h-full flex items-center justify-center">
@@ -437,7 +425,6 @@ const TopHeadlines: React.FC = () => {
               )}
             </ScrollArea>
 
-            {/* Selected Count */}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
                 {selectedSources.length}{" "}

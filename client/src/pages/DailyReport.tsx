@@ -24,10 +24,8 @@ const DailyReport: React.FC = () => {
   const [inputDate, setInputDate] = useState<string>("2024-12-31");
   const [progress, setProgress] = useState(0);
 
-  // Update date navigation functions
   const goToDate = (newDate: Date) => {
     if (newDate <= new Date()) {
-      // Ensure we're working with the local date
       const localDate = new Date(
         newDate.getFullYear(),
         newDate.getMonth(),
@@ -39,7 +37,6 @@ const DailyReport: React.FC = () => {
   };
 
   const handleSearch = () => {
-    // Create date in local timezone by adding time component
     const parsedDate = new Date(inputDate + "T00:00:00");
     if (!isNaN(parsedDate.getTime()) && parsedDate <= new Date()) {
       goToDate(parsedDate);
@@ -77,7 +74,6 @@ const DailyReport: React.FC = () => {
     goToDate(newDate);
   };
 
-  // Update useEffect to use the new API service
   useEffect(() => {
     let isMounted = true;
 
@@ -89,7 +85,6 @@ const DailyReport: React.FC = () => {
         setError(null);
         setProgress(0);
 
-        // Start progress simulation
         const progressInterval = setInterval(() => {
           setProgress((p) => (p >= 90 ? 90 : p + 10));
         }, 500);
@@ -123,13 +118,11 @@ const DailyReport: React.FC = () => {
     };
   }, [date]);
 
-  // Update date formatting
   const formatDate = (date: Date | null) => {
     if (!date) return "";
     return format(date, "EEEE, MMMM d, yyyy");
   };
 
-  // Add sentiment label helper function
   const getSentimentLabel = (value: number) => {
     if (value <= 2) return { text: "Very Negative", color: "#ef4444" };
     if (value <= 4) return { text: "Negative", color: "#f87171" };
@@ -138,7 +131,6 @@ const DailyReport: React.FC = () => {
     return { text: "Very Positive", color: "#22c55e" };
   };
 
-  // Loading skeleton
   const LoadingSkeleton = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -178,7 +170,6 @@ const DailyReport: React.FC = () => {
               </p>
             </div>
 
-            {/* Date Controls */}
             <div className="flex items-center justify-center gap-2 mb-6">
               <Button
                 variant="outline"
@@ -212,13 +203,12 @@ const DailyReport: React.FC = () => {
                 size="icon"
                 onClick={goForward}
                 className="h-9 w-9"
-                disabled={loading || date >= new Date()}
+                disabled={loading || !date || date >= new Date()}
               >
                 →
               </Button>
             </div>
 
-            {/* Loading State */}
             {loading && (
               <div className="space-y-4">
                 <div className="relative">
@@ -252,7 +242,6 @@ const DailyReport: React.FC = () => {
               </div>
             )}
 
-            {/* Content */}
             {!date ? (
               <Card className="border-none shadow-lg">
                 <CardContent className="p-6">
@@ -281,7 +270,6 @@ const DailyReport: React.FC = () => {
                     <div className="flex flex-col items-center justify-center space-y-4 border-b pb-6">
                       <div className="relative w-32 h-32">
                         <svg className="w-full h-full" viewBox="0 0 100 100">
-                          {/* Background circle */}
                           <circle
                             cx="50"
                             cy="50"
@@ -290,7 +278,6 @@ const DailyReport: React.FC = () => {
                             stroke="#e5e7eb"
                             strokeWidth="8"
                           />
-                          {/* Progress circle */}
                           <circle
                             cx="50"
                             cy="50"

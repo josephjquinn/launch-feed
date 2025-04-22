@@ -33,7 +33,6 @@ const DateGuessGame: React.FC = () => {
   const [lastGuess, setLastGuess] = useState<number | null>(null);
   const [loadingStep, setLoadingStep] = useState(0);
 
-  // Generate a random date between 2000 and 2025
   const generateRandomDate = () => {
     const start = new Date("2000-01-01");
     const end = new Date("2025-12-31");
@@ -42,19 +41,15 @@ const DateGuessGame: React.FC = () => {
     );
   };
 
-  // Validate year input
   const handleYearChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    // Only allow 4 digits
     if (value.length <= 4 && /^\d*$/.test(value)) {
       setGuessYear(value);
     }
   };
 
-  // Fetch data for a specific date
   const fetchDateData = useCallback(async (dateStr: string) => {
     try {
-      // Fetch summary with retry logic
       const [summaryResult] = await Promise.all([
         fetchWithRetry(() =>
           client(nytDailyReport).executeFunction({
@@ -64,7 +59,6 @@ const DateGuessGame: React.FC = () => {
         ),
       ]);
 
-      // Check for no data case
       if (
         typeof summaryResult === "string" &&
         summaryResult.trim().includes("no articles or rows provided")
@@ -72,7 +66,6 @@ const DateGuessGame: React.FC = () => {
         throw new Error("No articles found for this date");
       }
 
-      // Validate response
       if (!validateResponse(summaryResult, "summary")) {
         throw new Error("Invalid summary data received");
       }
@@ -86,7 +79,6 @@ const DateGuessGame: React.FC = () => {
     }
   }, []);
 
-  // Load new random date and its data
   const loadNewDate = useCallback(async () => {
     setLoading(true);
     setProgress(0);
@@ -97,7 +89,6 @@ const DateGuessGame: React.FC = () => {
     setLastGuess(null);
     setIsCorrect(false);
 
-    // Simulate progress
     const progressInterval = setInterval(() => {
       setProgress((p) => (p >= 90 ? 90 : p + 10));
     }, 500);
@@ -105,7 +96,7 @@ const DateGuessGame: React.FC = () => {
     try {
       let success = false;
       let attempts = 0;
-      const maxAttempts = 5; // Prevent infinite loops
+      const maxAttempts = 5;
 
       while (!success && attempts < maxAttempts) {
         attempts++;
@@ -145,7 +136,6 @@ const DateGuessGame: React.FC = () => {
       setProgress(100);
       setLoadingStep(4);
 
-      // Add a small delay to ensure smooth transition
       await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (err) {
       setError(
@@ -161,7 +151,6 @@ const DateGuessGame: React.FC = () => {
     }
   }, [fetchDateData]);
 
-  // Handle guess submission
   const handleGuess = () => {
     if (!targetDate || !guessYear || loading) return;
 
@@ -176,14 +165,12 @@ const DateGuessGame: React.FC = () => {
     setIsCorrect(correct);
   };
 
-  // Handle key press
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleGuess();
     }
   };
 
-  // Load initial date when game starts
   useEffect(() => {
     if (gameStarted) {
       loadNewDate();

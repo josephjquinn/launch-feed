@@ -85,7 +85,6 @@ const NewsSearch: React.FC = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const [searchProgress, setSearchProgress] = useState(0);
 
-  // Fetch available sources on component mount
   useEffect(() => {
     const fetchSources = async () => {
       try {
@@ -101,7 +100,6 @@ const NewsSearch: React.FC = () => {
         if (data.status === "error") {
           throw new Error(data.message || "Failed to fetch sources");
         }
-        // Add artificial delay to match loading animation
         await new Promise((resolve) => setTimeout(resolve, 3000));
         setSources(data.sources);
       } catch (err) {
@@ -114,7 +112,6 @@ const NewsSearch: React.FC = () => {
     fetchSources();
   }, []);
 
-  // Simulate loading progress for sources
   useEffect(() => {
     if (loadingSources) {
       setLoadingProgress(0);
@@ -133,7 +130,6 @@ const NewsSearch: React.FC = () => {
     }
   }, [loadingSources]);
 
-  // Simulate loading progress for search
   useEffect(() => {
     if (loading) {
       setSearchProgress(0);
@@ -199,7 +195,6 @@ const NewsSearch: React.FC = () => {
         urlToImage: article.urlToImage,
       }));
 
-      // Add artificial delay to match loading animation
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setResults(formattedArticles);
     } catch (err) {
@@ -229,7 +224,6 @@ const NewsSearch: React.FC = () => {
   return (
     <div className="h-full bg-background">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex flex-col items-center text-center mb-8">
           <div className="flex items-center gap-4 mb-2">
             <div className="p-2 bg-primary/10 rounded-lg">
@@ -242,10 +236,8 @@ const NewsSearch: React.FC = () => {
           </p>
         </div>
 
-        {/* Search Form */}
         <div className="max-w-2xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Search Bar */}
             <div className="flex gap-2">
               <div className="relative flex-1">
                 <div className="absolute inset-y-0 left-3 flex items-center">
@@ -265,7 +257,6 @@ const NewsSearch: React.FC = () => {
               </Button>
             </div>
 
-            {/* Filters */}
             <div className="space-y-4 bg-muted/30 p-4 rounded-lg">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Search Filters</h3>
@@ -390,7 +381,6 @@ const NewsSearch: React.FC = () => {
               </div>
             </div>
 
-            {/* Selected Sources Tags */}
             {selectedSources.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {selectedSources.map((sourceId) => {
@@ -416,7 +406,6 @@ const NewsSearch: React.FC = () => {
           </form>
         </div>
 
-        {/* Results */}
         <div className="max-w-6xl mx-auto mt-8">
           {loading ? (
             <div className="space-y-8">
@@ -457,7 +446,6 @@ const NewsSearch: React.FC = () => {
         </div>
       </div>
 
-      {/* Sources Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl w-[90vw]">
           <DialogHeader>
@@ -468,7 +456,6 @@ const NewsSearch: React.FC = () => {
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Search and Clear */}
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -505,7 +492,6 @@ const NewsSearch: React.FC = () => {
               </div>
             </div>
 
-            {/* Sources List */}
             <ScrollArea className="h-[400px] rounded-md border bg-muted/5">
               {loadingSources ? (
                 <div className="h-full flex items-center justify-center">
@@ -602,7 +588,6 @@ const NewsSearch: React.FC = () => {
               )}
             </ScrollArea>
 
-            {/* Selected Count */}
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">
                 {selectedSources.length}{" "}
