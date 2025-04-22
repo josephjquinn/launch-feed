@@ -19,7 +19,9 @@ const ontologyRid =
   "ri.ontology.main.ontology.ab3b7be9-b65d-4d93-b68c-c5fc218d81e0";
 
 const client: Client = createClient(
-  import.meta.env.DEV ? "http://localhost:5173" : url,
+  import.meta.env.DEV
+    ? "http://localhost:5173"
+    : "https://launch-feed.vercel.app",
   ontologyRid,
   () => Promise.resolve(token)
 );
