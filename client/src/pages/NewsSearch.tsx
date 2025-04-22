@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Check, X, Filter } from "lucide-react";
+import { Search, X, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -23,6 +23,7 @@ import { ArticleCard } from "@/components/articles/ArticleCard";
 import { ArticleLoadingState } from "@/components/articles/ArticleLoadingState";
 import { format } from "date-fns";
 import { Progress } from "@/components/ui/progress";
+import { sourcesData } from "@/data/sources";
 
 interface NewsArticle {
   title: string;
@@ -47,22 +48,6 @@ interface NewsApiResponse {
   message?: string;
 }
 
-interface Source {
-  id: string;
-  name: string;
-  description: string;
-  url: string;
-  category: string;
-  language: string;
-  country: string;
-}
-
-interface SourcesResponse {
-  status: string;
-  sources: Source[];
-  message?: string;
-}
-
 const SORT_OPTIONS = [
   { value: "relevancy", label: "Relevancy" },
   { value: "popularity", label: "Popularity" },
@@ -74,61 +59,13 @@ const NewsSearch: React.FC = () => {
   const [sortBy, setSortBy] = useState("relevancy");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<NewsArticle[]>([]);
-  const [sources, setSources] = useState<Source[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [loadingSources, setLoadingSources] = useState(true);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [fromDate, setFromDate] = useState<Date | undefined>();
   const [toDate, setToDate] = useState<Date | undefined>();
   const [hasSearched, setHasSearched] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [searchProgress, setSearchProgress] = useState(0);
-
-  useEffect(() => {
-    const fetchSources = async () => {
-      try {
-        const response = await fetch(
-          `https://newsapi.org/v2/sources?apiKey=${
-            import.meta.env.VITE_NEWS_API_KEY
-          }`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch sources");
-        }
-        const data = (await response.json()) as SourcesResponse;
-        if (data.status === "error") {
-          throw new Error(data.message || "Failed to fetch sources");
-        }
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-        setSources(data.sources);
-      } catch (err) {
-        console.error("Error fetching sources:", err);
-      } finally {
-        setLoadingSources(false);
-      }
-    };
-
-    fetchSources();
-  }, []);
-
-  useEffect(() => {
-    if (loadingSources) {
-      setLoadingProgress(0);
-      const progressInterval = setInterval(() => {
-        setLoadingProgress((prev) => {
-          const next = prev + 4;
-          if (next >= 100) {
-            clearInterval(progressInterval);
-            return 100;
-          }
-          return next;
-        });
-      }, 60);
-
-      return () => clearInterval(progressInterval);
-    }
-  }, [loadingSources]);
 
   useEffect(() => {
     if (loading) {
@@ -217,7 +154,7 @@ const NewsSearch: React.FC = () => {
     );
   };
 
-  const filteredSources = sources.filter((source) =>
+  const filteredSources = sourcesData.sources.filter((source) =>
     source.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -384,7 +321,9 @@ const NewsSearch: React.FC = () => {
             {selectedSources.length > 0 && (
               <div className="flex flex-wrap gap-2 pt-2">
                 {selectedSources.map((sourceId) => {
-                  const source = sources.find((s) => s.id === sourceId);
+                  const source = sourcesData.sources.find(
+                    (s) => s.id === sourceId
+                  );
                   return (
                     <Badge
                       key={sourceId}
@@ -493,41 +432,7 @@ const NewsSearch: React.FC = () => {
             </div>
 
             <ScrollArea className="h-[400px] rounded-md border bg-muted/5">
-              {loadingSources ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="w-full max-w-sm space-y-4 p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {Math.round(loadingProgress)}%
-                        </span>
-                      </div>
-                      <Progress value={loadingProgress} className="h-2" />
-                    </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/10 animate-pulse"
-                        >
-                          <div className="h-4 w-4 rounded-sm bg-muted/20 mt-1" />
-                          <div className="space-y-2 flex-1">
-                            <div className="h-4 w-2/3 bg-muted/20 rounded" />
-                            <div className="space-y-1">
-                              <div className="h-3 w-full bg-muted/20 rounded" />
-                              <div className="h-3 w-4/5 bg-muted/20 rounded" />
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="h-5 w-16 bg-muted/20 rounded-full" />
-                              <div className="h-5 w-12 bg-muted/20 rounded-full" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : filteredSources.length === 0 ? (
+              {filteredSources.length === 0 ? (
                 <div className="h-full flex items-center justify-center p-8">
                   <div className="text-center space-y-2">
                     <Filter className="h-8 w-8 text-muted-foreground mx-auto" />

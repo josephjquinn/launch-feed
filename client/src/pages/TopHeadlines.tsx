@@ -15,6 +15,7 @@ import { ArticleLoadingState } from "@/components/articles/ArticleLoadingState";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { sourcesData } from "@/data/sources";
 
 interface NewsArticle {
   title: string;
@@ -53,29 +54,23 @@ const TopHeadlines: React.FC = () => {
   const [results, setResults] = useState<FormattedArticle[]>([]);
   const [sources, setSources] = useState<Source[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
-  const [loadingSources, setLoadingSources] = useState(true);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loadingProgress, setLoadingProgress] = useState(0);
+
+  // Initialize sources from hardcoded data
+  useEffect(() => {
+    const formattedSources = sourcesData.sources.map((source) => ({
+      name: source.name,
+      url: source.url,
+    }));
+    setSources(formattedSources);
+  }, []);
 
   // Combined effect for initial data loading
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
-        setLoadingSources(true);
-        setLoadingProgress(0);
-
-        // Start progress interval
-        const progressInterval = setInterval(() => {
-          setLoadingProgress((prev) => {
-            const next = prev + 4;
-            if (next >= 100) {
-              clearInterval(progressInterval);
-              return 100;
-            }
-            return next;
-          });
-        }, 60);
+        setLoading(true);
 
         // Make a single API call
         const response = await fetch(
@@ -115,7 +110,6 @@ const TopHeadlines: React.FC = () => {
       } catch (err) {
         console.error("Error fetching data:", err);
       } finally {
-        setLoadingSources(false);
         setLoading(false);
       }
     };
@@ -312,9 +306,7 @@ const TopHeadlines: React.FC = () => {
                 <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   value={searchQuery}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                    setSearchQuery(e.target.value)
-                  }
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Search sources..."
                   className="pl-9"
                 />
@@ -346,41 +338,7 @@ const TopHeadlines: React.FC = () => {
             </div>
 
             <ScrollArea className="h-[400px] rounded-md border bg-muted/5">
-              {loadingSources ? (
-                <div className="h-full flex items-center justify-center">
-                  <div className="w-full max-w-sm space-y-4 p-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium">
-                          {Math.round(loadingProgress)}%
-                        </span>
-                      </div>
-                      <Progress value={loadingProgress} className="h-2" />
-                    </div>
-                    <div className="grid grid-cols-1 gap-3">
-                      {[...Array(5)].map((_, i) => (
-                        <div
-                          key={i}
-                          className="flex items-start gap-3 p-3 rounded-lg bg-muted/10 animate-pulse"
-                        >
-                          <div className="h-4 w-4 rounded-sm bg-muted/20 mt-1" />
-                          <div className="space-y-2 flex-1">
-                            <div className="h-4 w-2/3 bg-muted/20 rounded" />
-                            <div className="space-y-1">
-                              <div className="h-3 w-full bg-muted/20 rounded" />
-                              <div className="h-3 w-4/5 bg-muted/20 rounded" />
-                            </div>
-                            <div className="flex gap-2">
-                              <div className="h-5 w-16 bg-muted/20 rounded-full" />
-                              <div className="h-5 w-12 bg-muted/20 rounded-full" />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : filteredSources.length === 0 ? (
+              {filteredSources.length === 0 ? (
                 <div className="h-full flex items-center justify-center p-8">
                   <div className="text-center space-y-2">
                     <Filter className="h-8 w-8 text-muted-foreground mx-auto" />
