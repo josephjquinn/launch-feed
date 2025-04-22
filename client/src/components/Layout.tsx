@@ -9,16 +9,14 @@ export default function Layout() {
   return (
     <div className="min-h-screen flex flex-col bg-background">
       <header className="sticky top-0 z-50 bg-background border-b border-border/30">
-        <nav className="container mx-auto px-0 py-2">
+        <nav className="container mx-auto px-4 py-2">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 -ml-16">
-              <Link
-                to="/"
-                className="text-lg font-semibold text-primary hover:opacity-80 transition px-2"
-              >
-                Launch Feed
-              </Link>
-            </div>
+            <Link
+              to="/"
+              className="text-lg font-semibold text-primary hover:opacity-80 transition"
+            >
+              Launch Feed
+            </Link>
             <ul className="flex items-center gap-1">
               {[
                 { path: "/daily-report", icon: Newspaper, label: "Daily" },
