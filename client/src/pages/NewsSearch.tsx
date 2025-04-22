@@ -544,22 +544,17 @@ const NewsSearch: React.FC = () => {
                       onClick={() => handleSourceSelect(source.id)}
                       className={cn(
                         "flex items-start gap-3 p-3 rounded-lg text-left transition-colors",
-                        "hover:bg-muted/50",
-                        selectedSources.includes(source.id) && "bg-muted/30"
+                        "hover:bg-muted/50"
                       )}
                     >
                       <div
                         className={cn(
                           "h-4 w-4 rounded-sm border mt-1 flex items-center justify-center flex-shrink-0",
                           selectedSources.includes(source.id)
-                            ? "bg-primary border-primary"
+                            ? "bg-white border-primary"
                             : "border-muted-foreground/30"
                         )}
-                      >
-                        {selectedSources.includes(source.id) && (
-                          <Check className="h-3 w-3 text-primary-foreground" />
-                        )}
-                      </div>
+                      />
                       <div className="space-y-1 min-w-0">
                         <div className="font-medium truncate">
                           {source.name}
