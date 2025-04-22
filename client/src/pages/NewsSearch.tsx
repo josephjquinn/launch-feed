@@ -28,24 +28,28 @@ import { sourcesData } from "@/data/sources";
 interface NewsArticle {
   title: string;
   description: string;
-  author: string | null;
+  content: string;
+  url: string;
+  image: string | null;
+  publishedAt: string;
+  source: {
+    name: string;
+    url: string;
+  };
+}
+
+interface FormattedArticle {
+  title: string;
+  description: string;
+  author: string;
   publishedAt: string;
   url: string;
   urlToImage: string | null;
 }
 
-interface NewsApiResponse {
-  status: string;
-  totalResults: number;
-  articles: Array<{
-    title: string;
-    description: string | null;
-    author: string | null;
-    publishedAt: string;
-    url: string;
-    urlToImage: string | null;
-  }>;
-  message?: string;
+interface GNewsResponse {
+  totalArticles: number;
+  articles: NewsArticle[];
 }
 
 const SORT_OPTIONS = [
@@ -58,7 +62,7 @@ const NewsSearch: React.FC = () => {
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState("relevancy");
   const [loading, setLoading] = useState(false);
-  const [results, setResults] = useState<NewsArticle[]>([]);
+  const [results, setResults] = useState<FormattedArticle[]>([]);
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -93,10 +97,11 @@ const NewsSearch: React.FC = () => {
       setHasSearched(true);
 
       const params = new URLSearchParams({
+        apikey: import.meta.env.VITE_GNEWS_API_KEY,
         q: query,
-        language: "en",
-        sortBy,
-        apiKey: import.meta.env.VITE_NEWS_API_KEY,
+        lang: "en",
+        country: "us",
+        max: "10",
       });
 
       if (fromDate) {
@@ -110,27 +115,25 @@ const NewsSearch: React.FC = () => {
       }
 
       const response = await fetch(
-        `https://newsapi.org/v2/everything?${params.toString()}`
+        `https://gnews.io/api/v4/search?${params.toString()}`
       );
 
       if (!response.ok) {
         throw new Error("Failed to fetch articles");
       }
 
-      const data = (await response.json()) as NewsApiResponse;
+      const data = (await response.json()) as GNewsResponse;
 
-      if (data.status === "error") {
-        throw new Error(data.message || "Failed to fetch articles");
-      }
-
-      const formattedArticles = data.articles.map((article) => ({
-        title: article.title,
-        description: article.description || "No description available",
-        author: article.author,
-        publishedAt: new Date(article.publishedAt).toLocaleDateString(),
-        url: article.url,
-        urlToImage: article.urlToImage,
-      }));
+      const formattedArticles: FormattedArticle[] = data.articles.map(
+        (article) => ({
+          title: article.title,
+          description: article.description || "No description available",
+          author: article.source.name,
+          publishedAt: new Date(article.publishedAt).toLocaleDateString(),
+          url: article.url,
+          urlToImage: article.image,
+        })
+      );
 
       await new Promise((resolve) => setTimeout(resolve, 1500));
       setResults(formattedArticles);
