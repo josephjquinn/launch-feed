@@ -45,9 +45,6 @@ export const auth = createPublicOauthClient(
   scopes
 );
 
-/**
- * Initialize the client to interact with the Foundry API
- */
 const client: Client = createClient(
   import.meta.env.DEV ? "http://localhost:5173" : url,
   ontologyRid,

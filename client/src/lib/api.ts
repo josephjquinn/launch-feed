@@ -20,26 +20,26 @@ interface RateLimitError {
   };
 }
 
-// Cache implementation
+// cache setup
 const cache = new Map<string, { data: DailyReportData; timestamp: number }>();
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000;
 
-// Retry configuration
+// retry configuration
 const MAX_RETRIES = 4;
-const INITIAL_RETRY_DELAY = 2000; // 2 seconds
-const MAX_RETRY_DELAY = 30000; // 30 seconds
-const BACKOFF_FACTOR = 2; // Exponential backoff factor
+const INITIAL_RETRY_DELAY = 2000;
+const MAX_RETRY_DELAY = 30000;
+const BACKOFF_FACTOR = 2;
 
-// Helper function to sleep
+// helper function to sleep
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Helper function to calculate retry delay with exponential backoff
+// helper function to calculate retry delay with exponential backoff
 const getRetryDelay = (retryCount: number): number => {
   const delay = INITIAL_RETRY_DELAY * Math.pow(BACKOFF_FACTOR, retryCount);
   return Math.min(delay, MAX_RETRY_DELAY);
 };
 
-// Helper function to check if error is rate limit error
+// helper function to check if error is rate limit error
 const isRateLimitError = (error: unknown): boolean => {
   if (error && typeof error === "object" && "errorCode" in error) {
     const err = error as RateLimitError;
@@ -53,11 +53,11 @@ const isRateLimitError = (error: unknown): boolean => {
   return false;
 };
 
-// Helper function to validate API response
+// helper function to validate api response
 export const validateResponse = (response: unknown, type: string): boolean => {
   if (type === "summary" && typeof response === "string") {
     const trimmedResponse = response.trim();
-    // Check for the "no articles" message
+    // check for the "no articles" message
     if (trimmedResponse.includes("no articles or rows provided")) {
       return false;
     }
@@ -80,7 +80,7 @@ export const validateResponse = (response: unknown, type: string): boolean => {
   return false;
 };
 
-// Helper function to handle API errors
+// helper function to handle api errors
 const handleApiError = (error: unknown, operation: string): ApiError => {
   console.error(`Error in ${operation}:`, error);
   if (error instanceof Error) {
@@ -89,7 +89,7 @@ const handleApiError = (error: unknown, operation: string): ApiError => {
   return new Error(`Unknown error in ${operation}`);
 };
 
-// Fetch data with retry logic
+// fetch data with retry logic
 export const fetchWithRetry = async <T>(
   operation: () => Promise<T>,
   retryCount = 0
@@ -118,14 +118,14 @@ export const fetchDailyReport = async (
   const dateString = format(date, "yyyy-MM-dd");
   const cacheKey = `daily-report-${dateString}`;
 
-  // Check cache
+  // check cache
   const cached = cache.get(cacheKey);
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
     return cached.data;
   }
 
   try {
-    // Fetch summary and topics in parallel
+    // fetch summary and topics in parallel
     const [summaryResult, topicsResult] = await Promise.all([
       fetchWithRetry(() =>
         client(nytDailyReport).executeFunction({
@@ -141,7 +141,7 @@ export const fetchDailyReport = async (
       ),
     ]);
 
-    // Check for no data case
+    // check for no data case
     if (
       typeof summaryResult === "string" &&
       summaryResult.trim().includes("no articles or rows provided")
@@ -149,7 +149,7 @@ export const fetchDailyReport = async (
       throw new Error("No articles found for this date");
     }
 
-    // Validate responses
+    // validation
     if (!validateResponse(summaryResult, "summary")) {
       throw new Error("Invalid summary data received");
     }
@@ -157,7 +157,7 @@ export const fetchDailyReport = async (
       throw new Error("Invalid topics data received");
     }
 
-    // Get sentiment analysis
+    // get sentiment analysis
     const sentimentResult = await fetchWithRetry(() =>
       client(recapSentiment).executeFunction({
         recap: summaryResult.trim(),
@@ -174,7 +174,7 @@ export const fetchDailyReport = async (
       sentiment: parseFloat(sentimentResult),
     };
 
-    // Update cache
+    // update cache
     cache.set(cacheKey, {
       data,
       timestamp: Date.now(),
