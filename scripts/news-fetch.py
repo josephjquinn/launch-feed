@@ -1,15 +1,23 @@
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 from newsapi import NewsApiClient
 
-# Init
-newsapi = NewsApiClient(api_key="90288d928a4941b1969d1caa1b26ab5d")
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+load_dotenv(SCRIPT_DIR / '.env')
+
+api_key = os.getenv('NEWS_API_KEY')
+if not api_key:
+    raise ValueError("NEWS_API_KEY environment variable is not set")
+
+newsapi = NewsApiClient(api_key=api_key)
 
 
-# /v2/top-headlines
 top_headlines = newsapi.get_top_headlines(
     language="en",
 )
 
-# /v2/everything
 all_articles = newsapi.get_everything(
     q="bitcoin",
     domains="bbc.co.uk,techcrunch.com",
@@ -18,6 +26,5 @@ all_articles = newsapi.get_everything(
     page=2,
 )
 
-# /v2/top-headlines/sources
 sources = newsapi.get_sources()
 print(top_headlines)
