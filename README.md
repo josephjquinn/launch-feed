@@ -8,13 +8,6 @@ Launch Feed is my project submission developed for the Palantir Launch 2025 prog
 
 In today's fast-paced world, space enthusiasts and professionals struggle to keep up with the latest space launches and related news. Traditional news sources often provide fragmented information, making it difficult to get a comprehensive view of upcoming launches, their significance, and related developments.
 
-Launch Feed solves this by:
-
-- Aggregating launch data from multiple sources
-- Providing real-time updates on launch schedules
-- Offering AI-powered analysis of launch significance
-- Delivering personalized news feeds based on user interests
-
 ## Project Structure
 
 ```
