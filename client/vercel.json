@@ -2,6 +2,10 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/" },
     {
+      "source": "/multipass/api/oauth2/authorize",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/api/oauth2/authorize"
+    },
+    {
       "source": "/multipass/:path*",
       "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/:path*"
     }
