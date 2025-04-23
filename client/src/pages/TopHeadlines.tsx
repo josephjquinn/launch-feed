@@ -22,22 +22,28 @@ interface NewsArticle {
   description: string;
   content: string;
   url: string;
-  image: string | null;
+  urlToImage: string | null;
   publishedAt: string;
   source: {
+    id: string;
     name: string;
-    url: string;
   };
 }
 
-interface GNewsResponse {
-  totalArticles: number;
+interface NewsApiResponse {
+  status: string;
+  totalResults: number;
   articles: NewsArticle[];
 }
 
 interface Source {
+  id: string;
   name: string;
+  description: string;
   url: string;
+  category: string;
+  language: string;
+  country: string;
 }
 
 interface FormattedArticle {
@@ -59,31 +65,48 @@ const TopHeadlines: React.FC = () => {
 
   // Initialize sources from hardcoded data
   useEffect(() => {
-    const formattedSources = sourcesData.sources.map((source) => ({
-      name: source.name,
-      url: source.url,
-    }));
-    setSources(formattedSources);
+    setSources(sourcesData.sources);
   }, []);
 
-  // Combined effect for initial data loading
+  // Effect for fetching headlines
   useEffect(() => {
-    const fetchInitialData = async () => {
+    const fetchHeadlines = async () => {
       try {
         setLoading(true);
 
-        // Make a single API call
+        const params = new URLSearchParams({
+          apiKey: import.meta.env.VITE_NEWS_API_KEY,
+          language: "en",
+          pageSize: "10",
+        });
+
+        // Only add source parameter if we have selected sources
+        if (selectedSources.length > 0) {
+          const validSources = selectedSources.filter((sourceId) =>
+            sources.some((s) => s.id === sourceId)
+          );
+          if (validSources.length > 0) {
+            params.append("sources", validSources.join(","));
+          }
+        }
+
         const response = await fetch(
-          `https://gnews.io/api/v4/top-headlines?apikey=${
-            import.meta.env.VITE_GNEWS_API_KEY
-          }&lang=en&country=us&max=10`
+          `https://newsapi.org/v2/top-headlines?${params.toString()}`
         );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch data");
+          throw new Error(`Failed to fetch data: ${response.status}`);
         }
 
-        const data = (await response.json()) as GNewsResponse;
+        const data = (await response.json()) as NewsApiResponse;
+
+        if (
+          data.status !== "ok" ||
+          !data.articles ||
+          !Array.isArray(data.articles)
+        ) {
+          throw new Error("Invalid response format from API");
+        }
 
         // Process headlines
         const formattedArticles = data.articles.map((article) => ({
@@ -92,82 +115,20 @@ const TopHeadlines: React.FC = () => {
           author: article.source.name,
           publishedAt: new Date(article.publishedAt).toLocaleDateString(),
           url: article.url,
-          urlToImage: article.image,
-        }));
-
-        // Process sources from the same data
-        const uniqueSources = Array.from(
-          new Set(data.articles.map((article) => article.source.name))
-        ).map((name) => ({
-          name,
-          url:
-            data.articles.find((article) => article.source.name === name)
-              ?.source.url || "",
-        }));
-
-        setResults(formattedArticles);
-        setSources(uniqueSources);
-      } catch (err) {
-        console.error("Error fetching data:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, []); // Empty dependency array since we only want to fetch once on mount
-
-  // Separate effect for fetching headlines when sources change
-  useEffect(() => {
-    const fetchHeadlines = async () => {
-      if (selectedSources.length === 0) return; // Skip if no sources selected
-
-      try {
-        setLoading(true);
-        const params = new URLSearchParams({
-          apikey: import.meta.env.VITE_GNEWS_API_KEY,
-          lang: "en",
-          country: "us",
-          max: "10",
-        });
-
-        if (selectedSources.length > 0) {
-          // Format sources as a comma-separated list
-          params.append("sources", selectedSources.join(","));
-        }
-
-        const response = await fetch(
-          `https://gnews.io/api/v4/top-headlines?${params.toString()}`
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(
-            errorData.errors?.q || "Failed to fetch top headlines"
-          );
-        }
-
-        const data = (await response.json()) as GNewsResponse;
-
-        const formattedArticles = data.articles.map((article) => ({
-          title: article.title,
-          description: article.description || "No description available",
-          author: article.source.name,
-          publishedAt: new Date(article.publishedAt).toLocaleDateString(),
-          url: article.url,
-          urlToImage: article.image,
+          urlToImage: article.urlToImage,
         }));
 
         setResults(formattedArticles);
       } catch (err) {
-        console.error("Error fetching top headlines:", err);
+        console.error("Error fetching headlines:", err);
+        setResults([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchHeadlines();
-  }, [selectedSources]);
+  }, [selectedSources, sources]);
 
   const handleSourceSelect = (sourceId: string) => {
     setSelectedSources((prev) =>
@@ -213,7 +174,7 @@ const TopHeadlines: React.FC = () => {
             {selectedSources.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {selectedSources.map((sourceId) => {
-                  const source = sources.find((s) => s.name === sourceId);
+                  const source = sources.find((s) => s.id === sourceId);
                   return (
                     <Badge
                       key={sourceId}
@@ -317,7 +278,7 @@ const TopHeadlines: React.FC = () => {
                   size="sm"
                   onClick={() =>
                     setSelectedSources(
-                      filteredSources.map((source) => source.name)
+                      filteredSources.map((source) => source.id)
                     )
                   }
                   className="text-muted-foreground hover:text-foreground whitespace-nowrap"
@@ -351,8 +312,8 @@ const TopHeadlines: React.FC = () => {
                 <div className="p-4 grid grid-cols-1 gap-3">
                   {filteredSources.map((source) => (
                     <button
-                      key={source.name}
-                      onClick={() => handleSourceSelect(source.name)}
+                      key={source.id}
+                      onClick={() => handleSourceSelect(source.id)}
                       className={cn(
                         "flex items-start gap-3 p-3 rounded-lg text-left transition-colors",
                         "hover:bg-muted/50"
@@ -361,7 +322,7 @@ const TopHeadlines: React.FC = () => {
                       <div
                         className={cn(
                           "h-4 w-4 rounded-sm border mt-1 flex items-center justify-center flex-shrink-0",
-                          selectedSources.includes(source.name)
+                          selectedSources.includes(source.id)
                             ? "bg-white border-primary"
                             : "border-muted-foreground/30"
                         )}

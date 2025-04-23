@@ -30,12 +30,18 @@ interface NewsArticle {
   description: string;
   content: string;
   url: string;
-  image: string | null;
+  urlToImage: string | null;
   publishedAt: string;
   source: {
+    id: string;
     name: string;
-    url: string;
   };
+}
+
+interface NewsApiResponse {
+  status: string;
+  totalResults: number;
+  articles: NewsArticle[];
 }
 
 interface FormattedArticle {
@@ -45,11 +51,6 @@ interface FormattedArticle {
   publishedAt: string;
   url: string;
   urlToImage: string | null;
-}
-
-interface GNewsResponse {
-  totalArticles: number;
-  articles: NewsArticle[];
 }
 
 const SORT_OPTIONS = [
@@ -97,11 +98,11 @@ const NewsSearch: React.FC = () => {
       setHasSearched(true);
 
       const params = new URLSearchParams({
-        apikey: import.meta.env.VITE_GNEWS_API_KEY,
+        apiKey: import.meta.env.VITE_NEWS_API_KEY,
         q: query,
-        lang: "en",
-        country: "us",
-        max: "10",
+        language: "en",
+        pageSize: "10",
+        sortBy: sortBy,
       });
 
       if (fromDate) {
@@ -111,18 +112,31 @@ const NewsSearch: React.FC = () => {
         params.append("to", format(toDate, "yyyy-MM-dd"));
       }
       if (selectedSources.length > 0) {
-        params.append("sources", selectedSources.join(","));
+        const validSources = selectedSources.filter((sourceId) =>
+          sourcesData.sources.some((s) => s.id === sourceId)
+        );
+        if (validSources.length > 0) {
+          params.append("sources", validSources.join(","));
+        }
       }
 
       const response = await fetch(
-        `https://gnews.io/api/v4/search?${params.toString()}`
+        `https://newsapi.org/v2/everything?${params.toString()}`
       );
 
       if (!response.ok) {
-        throw new Error("Failed to fetch articles");
+        throw new Error(`Failed to fetch articles: ${response.status}`);
       }
 
-      const data = (await response.json()) as GNewsResponse;
+      const data = (await response.json()) as NewsApiResponse;
+
+      if (
+        data.status !== "ok" ||
+        !data.articles ||
+        !Array.isArray(data.articles)
+      ) {
+        throw new Error("Invalid response format from API");
+      }
 
       const formattedArticles: FormattedArticle[] = data.articles.map(
         (article) => ({
@@ -131,7 +145,7 @@ const NewsSearch: React.FC = () => {
           author: article.source.name,
           publishedAt: new Date(article.publishedAt).toLocaleDateString(),
           url: article.url,
-          urlToImage: article.image,
+          urlToImage: article.urlToImage,
         })
       );
 
@@ -139,6 +153,7 @@ const NewsSearch: React.FC = () => {
       setResults(formattedArticles);
     } catch (err) {
       console.error("Error searching articles:", err);
+      setResults([]);
     } finally {
       setLoading(false);
     }
