@@ -2,6 +2,14 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/" },
     {
+      "source": "/api/:path*",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/api/:path*"
+    },
+    {
+      "source": "/v2/:path*",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/v2/:path*"
+    },
+    {
       "source": "/multipass/api/oauth2/authorize",
       "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/api/oauth2/authorize"
     },
@@ -11,6 +19,40 @@
     }
   ],
   "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization"
+        }
+      ]
+    },
+    {
+      "source": "/v2/:path*",
+      "headers": [
+        {
+          "key": "Access-Control-Allow-Origin",
+          "value": "*"
+        },
+        {
+          "key": "Access-Control-Allow-Methods",
+          "value": "GET, POST, PUT, DELETE, OPTIONS"
+        },
+        {
+          "key": "Access-Control-Allow-Headers",
+          "value": "X-Requested-With, Content-Type, Authorization"
+        }
+      ]
+    },
     {
       "source": "/multipass/:path*",
       "headers": [
