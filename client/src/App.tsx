@@ -5,11 +5,13 @@ import DailyReport from "./pages/DailyReport";
 import NewsSearch from "./pages/NewsSearch";
 import DateGuessGame from "./pages/DateGuessGame";
 import TopHeadlines from "./pages/TopHeadlines";
+import AuthCallback from "./pages/AuthCallback";
 
 function App() {
   return (
     <Router>
       <Routes>
+        <Route path="/auth-callback" element={<AuthCallback />} />
         <Route path="/" element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="daily-report" element={<DailyReport />} />

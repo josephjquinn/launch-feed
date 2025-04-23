@@ -1,7 +1,11 @@
-import { Client, createClient } from "@osdk/client";
+import { createClient } from "@osdk/client";
+import { createPublicOauthClient } from "@osdk/oauth";
 
-const url = import.meta.env.VITE_FOUNDRY_API_URL;
-const token = import.meta.env.VITE_FOUNDRY_TOKEN;
+const url = import.meta.env.DEV
+  ? import.meta.env.VITE_DEV_CLIENT_URL
+  : import.meta.env.VITE_PROD_CLIENT_URL;
+const clientId = import.meta.env.VITE_FOUNDRY_CLIENT_ID;
+const ontologyRid = import.meta.env.VITE_FOUNDRY_ONTOLOGY_RID;
 
 function checkEnv(
   value: string | undefined,
@@ -12,16 +16,16 @@ function checkEnv(
   }
 }
 
-checkEnv(url, "VITE_FOUNDRY_API_URL");
-checkEnv(token, "VITE_FOUNDRY_TOKEN");
-
-const ontologyRid =
-  "ri.ontology.main.ontology.ab3b7be9-b65d-4d93-b68c-c5fc218d81e0";
-
-const client: Client = createClient(
-  import.meta.env.DEV ? "http://localhost:5173" : window.location.origin,
-  ontologyRid,
-  () => Promise.resolve(token)
+checkEnv(
+  url,
+  import.meta.env.DEV ? "VITE_DEV_CLIENT_URL" : "VITE_PROD_CLIENT_URL"
 );
+checkEnv(clientId, "VITE_FOUNDRY_CLIENT_ID");
+checkEnv(ontologyRid, "VITE_FOUNDRY_ONTOLOGY_RID");
+
+const redirectUrl = url + "/auth-callback";
+
+export const auth = createPublicOauthClient(clientId, url, redirectUrl);
+export const client = createClient(url, ontologyRid, auth);
 
 export default client;
