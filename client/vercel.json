@@ -2,29 +2,25 @@
   "rewrites": [
     { "source": "/(.*)", "destination": "/" },
     {
-      "source": "/api/:path*",
-      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/api/:path*"
+      "source": "/api/(.*)",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/api/$1"
     },
     {
-      "source": "/v2/:path*",
-      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/v2/:path*"
+      "source": "/v2/(.*)",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/v2/$1"
     },
     {
-      "source": "/multipass/api/oauth2/authorize",
-      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/api/oauth2/authorize"
+      "source": "/multipass/api/oauth2/authorize(.*)",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/api/oauth2/authorize$1"
     },
     {
-      "source": "/multipass/api/oauth2/authorize*",
-      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/api/oauth2/authorize"
-    },
-    {
-      "source": "/multipass/:path*",
-      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/:path*"
+      "source": "/multipass/(.*)",
+      "destination": "https://jquinn-launch.usw-18.palantirfoundry.com/multipass/$1"
     }
   ],
   "headers": [
     {
-      "source": "/api/:path*",
+      "source": "/api/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -41,7 +37,7 @@
       ]
     },
     {
-      "source": "/v2/:path*",
+      "source": "/v2/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
@@ -58,7 +54,7 @@
       ]
     },
     {
-      "source": "/multipass/:path*",
+      "source": "/multipass/(.*)",
       "headers": [
         {
           "key": "Access-Control-Allow-Origin",
