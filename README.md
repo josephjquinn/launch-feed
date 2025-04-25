@@ -1,5 +1,9 @@
 # Launch Feed - Foundry-Powered News Aggregator
 
+### 🚀 Try It Now
+
+Visit the live application: [https://launch-feed.vercel.app/](https://launch-feed.vercel.app/)
+
 ## Slide Deck
 
 For a detailed overview of the project, please view the [Launch Feed Deck PDF](docs/launch-feed-deck.pdf)
